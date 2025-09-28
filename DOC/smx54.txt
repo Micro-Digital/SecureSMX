@@ -1,0 +1,140 @@
+
+
+
+
+                    smx Version 5.4.0 Release Notes
+                             July 15, 2025
+
+
+
+     CONTENTS:
+        Introduction
+        Upgrading
+        smx Manuals
+        Internet Support
+        smxid.txt
+
+
+     Release notes for previous versions of smx can be downloaded from
+     the Documentation section of www.smxrtos.com/support.
+
+
+     Introduction
+     ------------
+
+     v5.4 notable changes:
+
+     - It changes to Apache v2.0 from a proprietary license.
+     - It simplifies App files.
+     - It detects SSR calls made from ISRs, a common mistake that can be
+       difficult to find.
+
+     v5.3 notable changes:
+
+     - It removes our middleware (smxFS, smxNS, smxUSB, etc).
+       Instead, the FatFs file system is included and has been modified
+       to use SecureSMX portals, as an example.
+     - It supports only ARM-M (Cortex-M) and IAR tools. Support for
+       traditional ARM (and remnants for other architectures) and other
+       tools has been removed.
+     - SMX_CFG_PRI_UP has been removed, which allowed reversing priority
+       numbering so 0 is highest, which was added for porting layers for
+       RTOSes that use this priority scheme. It was decided that this
+       did not offer enough benefit to offset the difficulty to maintain
+       the code as changes are made.
+     - BOOLEAN/TRUE/FALSE -> bool/true/false
+     - General cleanup and simplification
+
+
+     Configuration and Reference
+     ---------------------------
+
+     - 3 boards are supported in this release (selected in CFG\iararm.h):
+
+         STMicro STM32F746G-Discovery (Cortex-M7)
+         STMicro STM32746G-EVAL (Cortex-M7)
+         NXP LPC55S69-EVK (Cortex-M8)
+
+       The Discovery board is low cost, about $50, and usually stocked
+       in large numbers at distributors. It is recommended to use this
+       board initially if you don't have one of the others.
+
+       For LPC55S69-EVK, disable MW_FATFS in CFG\iararm.h, since we did
+       not support FatFs.
+
+     - SecureSMX is enabled by default. To use only SMX features, set
+       SMX_CFG_SSMX to 0 in XSMX\xcfg.h and xarmm_iar.inc.
+       In the project file Linker options, delete "_mpu" from the name
+       of the .icf file to use.
+
+     - XPORT contains porting layers to migrate from popular RTOSes:
+         CM CMSIS (minimal to support FatFs)
+         FR FreeRTOS
+         TX ThreadX
+       - Add the files in the respective directory to the App project if
+         you are migrating from one of these.
+         In CFG\iararm.h enable SMX_FRPORT or SMX_TXPORT (but not _TEST)
+       - Test apps under XPORT test the ports and are mainly for our use.
+         To run them set SMX_CFG_SSMX to 0 in XSMX\xcfg.h and xarmm_iar.inc
+         temporarily. (There is no need to test also with SecureSMX.)
+       - SB_ARMM_DISABLE_WITH_BASEPRI is 0 by default (in XBASE\barmm*.*)
+         but must be 1 for FRPort. The user should be aware if this option
+         is enabled because it can lead to difficult problems, as ISRs
+         that are higher priority (lower number) are not prevented from
+         running, so critical sections protected by DISABLE/ENABLE will
+         not be protected from them. When 0, PRIMASK is used to disable
+         interrupts, which is simpler and safer.
+
+
+     Notes
+     -----
+
+     1. Plug blocks (see SecureSMX UG section 8.11) are not currently
+        supported by MpuPacker, so the example one is located outside of
+        collection blocks in the .icf file.
+
+     2. BSP directories contain subsets of chip vendor HAL releases.
+        Download the full releases from their websites and agree to their
+        terms. Delete others you are not using and build directories
+        under APP.
+
+
+     Upgrading
+     ---------
+
+     If you are upgrading from v4.4, diff xapi.h to see API changes.
+     Mostly, default parameter values were added, but some functions did
+     have changes. Most of the work was related to ARM-M Memory Protection
+     Unit support.
+
+
+     smx Manuals
+     -----------
+
+     SMX RTOS Quick Start -- overview information for all SMX modules
+     SMX Target Guide -- processor and tool information
+     smx User's Guide
+     smx Reference Manual
+     SecureSMX User's Guide
+
+     BSP notes for your target are provided in the DOC directory.
+     Note that we have not updated all, so there may be a few minor
+     inaccuracies or omissions in yours. For example, a few file names
+     have changed.
+
+
+     Internet Support
+     ----------------
+
+     Please visit www.smxrtos.com/support periodically, for fixes,
+     downloads, and other information. www.smxrtos.com also has helpful
+     articles and technical notes.
+
+
+     smxid.txt
+     ---------
+
+     XSMX\smxid.txt documents the version number of SMX as well as the
+     version numbers of the tools that are supported. Typically, the
+     name of each project file indicates what version was used when
+     building your release.

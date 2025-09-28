@@ -1,0 +1,3 @@
+# Unset text attribute so no end of line conversion is done on files.
+
+* -text

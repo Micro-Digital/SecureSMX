@@ -1,0 +1,30 @@
+smx v5.4.0
+----------
+
+This file documents the version of smx and tools supported by this
+release. Using a slightly newer version of the tools is often ok,
+but generally you cannot use an older one since project files will
+not backward convert and settings will be broken when opened in an
+older version of the IDE.
+
+
+ARM IAR Embedded Workbench (IAR.AM, IAR.ARM):
+   EWARM         v8.1x-v8.5x, v9.1x-v9.7x
+
+
+Please see the section for your compiler in the SMX Target Guide
+for the most up to date tool installation information.
+
+----------
+
+This software, documentation, and accompanying materials are made available
+under the Apache License, Version 2.0. You may not use this file except in
+compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+
+SPDX-License-Identifier: Apache-2.0
+
+This Work is protected by patents listed in smx.h. A patent license is
+granted according to the License above. This entire comment block must be
+preserved in all copies of this file.
+
+Support services are offered by MDI. Inquire at support@smxrtos.com.

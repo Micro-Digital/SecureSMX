@@ -1,0 +1,128 @@
+//****************************************************************************
+// lpc55s69evk_app_mpu.icf                                  Version 5.4.0
+//
+// ILINK Command File for IAR EWARM, App, and NXP LPC55S69-EVK board.
+//
+// Internal ROM Internal SRAM Version (ROM build targets)
+//
+// Copyright (c) 2020-2025 Micro Digital Inc.
+// All rights reserved. www.smxrtos.com
+//
+// Non-Secure Memory Layout:
+//    ROM       [0x00000000--0x0009D7FF] (630KB)  Code (last 10KB reserved)
+//    BOOT ROM  [0x03000000--0x0301FFFF] (128KB)  Boot code
+//    SRAM X    [0x04000000--0x04007FFF]  (32KB)  Unused (Casper & power down)
+//    SRAM0-3   [0x20000000--0x2003FFFF] (256KB)  EVT, Data, Main Stack, EVB
+//    SRAM4     [0x20040000--0x20043FFF]  (16KB)  Unused (PowerQuad)
+//    APB & AHB [0x40000000--0x4010FFFF]          Peripherals
+//
+// Secure Memory Layout:
+//    Add 0x10000000 to all addresses
+//
+//****************************************************************************
+
+define symbol EVT_size = 4*(16+60); /* 60=SB_IRQ_MAX+1 <1> */
+define exported symbol cphsz     = 0x400;   /* console partition heap */
+define exported symbol evbsz     = 0x10000;
+define memory mem with size = 4G;
+
+/* region definitions */
+define region ROM       = mem:[from 0x00000000 to 0x0009D7FF];
+define region SRAM      = mem:[from 0x20000000 to 0x2003FFFF];
+
+/* empty block definitions */
+define block CSTACK     with size = 0x400,     alignment = 8   { }; /* Main Stack */
+define block EB         with size = 0xF0,      alignment = 4   { }; /* Error Buffer */
+define block EVB        with size = evbsz,     alignment = 4   { }; /* Event Buffer */
+define block EVT        with size = EVT_size,  alignment = 512 { }; /* Exception Vector Table <1> */
+define block mheap      with size = 0x4000,    alignment = 16  { }; /* mheap */
+define block cp_heap    with size = cphsz,     alignment = 16  { };
+keep  {block EB, block EVB, block EVT};
+
+/* MPU region sizes (must be multiple of 0x20) <2> */
+define exported symbol cpcsz     = 0x2000;
+define exported symbol cpdsz     = 0x800;
+define exported symbol fpucsz    = 0x800;
+define exported symbol fpudsz    = 0x320;
+define exported symbol ledcsz    = 0x100;
+define exported symbol opconcsz  = 0x120;
+define exported symbol scsz      = 0x16000;   /* sys */
+define exported symbol sdsz      = 0xA980;
+define exported symbol ucomcsz   = 0x2A00;
+define exported symbol ucomdsz   = 0x600;
+
+/* standard clib functions permitted in umode */
+define block clib_code with alignment = 4
+                {ro object dl7M_tln.a, ro object m7M_tls.a, ro object rt7M_tl.a}
+         except {ro object cstartup_M.o, ro object cppinit.o, ro object data_init.o,
+                 ro object fpinit_M.o, ro object rle_init_single.o, ro object zero_init3.o,
+                 ro object cmain.o, ro object cmain_call_ctors.o,
+                 ro object exit.o, ro object cexit.o, ro object XXexit.o};
+define block clib_data with alignment = 4
+                {rw object dl7M_tln.a, rw object m7M_tls.a, rw object rt7M_tl.a}
+         except {rw object zero_init3.o, rw object rle_init_single.o};
+
+/* console partition regions */
+define block cp_code with size = cpcsz*8/8, alignment = cpcsz 
+                {ro section .cp.text, ro section .cp.rodata};
+define block cp_data with size = cpdsz*6/8, alignment = cpdsz
+                {block cp_heap, rw section .cp.data, rw section .cp.bss};
+
+/* ucom regions for umode */
+define block ucom_code with size = ucomcsz, alignment = 32
+                {ro section .ucom.text, ro section .ucom.rodata, /*<3>*/
+                 ro section .svc.text, ro section .svc.rodata,
+                 /*block cp_code,*/ block clib_code};
+
+define block ucom_data with fixed order, size = ucomdsz, alignment = 32
+                {rw section .ucom.bss, rw section .ucom.data, rw section .ucom.noinit,
+                 rw section .svc.bss, rw section .svc.data, rw section .svc.noinit,
+                 /*block cp_data,*/ block clib_data};
+
+/* middleware code and data blocks for MPU regions <2> */
+
+/* app code and data blocks for MPU regions <2> */
+define block opcon_code  with size = opconcsz,  alignment = 32 {ro section .opcon.text,  ro section .opcon.rodata};
+define block led_code    with size = ledcsz,    alignment = 32 {ro section .led.text,    ro section .led.rodata};
+define block fpu_code    with size = fpucsz,    alignment = 32 {ro section .fpu.text,    ro section .fpu.rodata};
+define block fpu_data    with size = fpudsz,    alignment = 32 {rw section .fpu.bss,     rw section .fpu.data, rw section .fpu.noinit};
+
+/* system regions for pmode */
+define block sys_code with fixed order, size = scsz, alignment = 32
+                {ro section .intvec, ro section .sys.text, ro section .sys.rodata, 
+                 block ucom_code, block opcon_code, block cp_code}; /*<3>*/
+
+define block sys_data with fixed order, size = sdsz, alignment = 32 
+                {block CSTACK, block EVT, block EB, block mheap, block ucom_data,  /*<4>*/
+                 rw section .sys.bss, rw section .sys.data, rw section .sys.noinit,
+                 block cp_data};
+
+/* initialization */
+initialize by copy with packing = zeros {rw};
+do not initialize  {section .noinit, section .mheap};
+
+/* block ordering */
+define block rom_block with fixed order, end alignment = 32
+                        {block sys_code, block led_code, block fpu_code, ro}; 
+
+define block sram_block with fixed order, end alignment = 32
+                        {block sys_data, block EVB, block fpu_data, rw}; 
+
+/* placements */
+place in ROM            {block rom_block};
+place in SRAM           {block sram_block};
+
+/* memory markers for smxAware */
+define exported symbol SRAM_S = start(SRAM);
+define exported symbol SRAM_E = end(SRAM);
+
+/* Notes:
+   1. Size = 4*(16 + SB_IRQ_MAX + 1). Must be aligned to power of 2 >= EVT size.
+   2. Alignment and size must be multiples of 32 bytes.
+   3. Section .intvec (first in sys_code) must be first in flash in order to
+      boot from reset, since the initial stack pointer and reset vector are
+      entries 0 and 1 and must be at the start of the boot flash. Also, this
+      vector table is used in the startup code until it copies the EVT to RAM
+      and changes NVIC_VTOR to point to it in RAM.
+   4. CSTACK is first so overflow will cause fault rather than corrupt data.
+*/

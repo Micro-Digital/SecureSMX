@@ -1,0 +1,56 @@
+//****************************************************************************
+// lpc55s69evk_app.icf                                      Version 5.4.0
+//
+// ILINK Command File for IAR EWARM, App, and NXP LPC55S69-EVK board.
+//
+// Internal ROM Internal SRAM Version (ROM build targets)
+//
+// Copyright (c) 2020-2025 Micro Digital Inc.
+// All rights reserved. www.smxrtos.com
+//
+// Memory Layout:
+//    ROM       [0x00000000--0x0009FFFF] (640KB)  Code
+//    BOOT ROM  [0x03000000--0x0301FFFF] (128KB)  Boot code
+//    SRAM X    [0x04000000--0x04007FFF]  (32KB)  Unused (Casper & power down)
+//    SRAM0-3   [0x20000000--0x2003FFFF] (256KB)  EVT, Data, Main Stack, EVB
+//    SRAM4     [0x20040000--0x20043FFF]  (16KB)  Unused (PowerQuad)
+//    APB & AHB [0x40000000--0x4010FFFF]          Peripherals
+//
+//****************************************************************************
+
+define symbol EVT_size = 4*(16+60); /* 60=SB_IRQ_MAX+1 <1> */
+define exported symbol evbsz     = 0x10000;
+define exported symbol fshsz     = 35000;
+
+define memory mem with size = 4G;
+
+/* region definitions */
+define region ROM       = mem:[from 0x00000000 to 0x0009FFFF];
+define region SRAM      = mem:[from 0x20000000 to 0x2003FFFF];
+
+/* empty block definitions */
+define block CSTACK     with size = 0x400,     alignment = 8   { }; /* Main Stack */
+define block EB         with size = 0xF0,      alignment = 4   { }; /* Error Buffer */
+define block EVB        with size = evbsz,     alignment = 4   { }; /* Event Buffer */
+define block EVT        with size = EVT_size,  alignment = 512 { }; /* Exception Vector Table <1> */
+define block mheap      with size = 0x4000,    alignment = 16  { }; /* mheap */
+keep  {block EB, block EVB, block EVT};
+
+/* initialization */
+initialize by copy {rw};
+do not initialize  {section .noinit, section .mheap};
+
+/* placements */
+place at start of ROM   {ro section .intvec};
+place in ROM            {ro};
+place at start of SRAM  {block CSTACK, block EVT};
+place in SRAM           {block EB, block EVB, block mheap, rw};
+
+/* for smxAware */
+define exported symbol SRAM_S = start(SRAM);
+define exported symbol SRAM_E = end(SRAM);
+
+/* Notes:
+   1. Size = 4*(16 + SB_IRQ_MAX + 1). Must be aligned to power of 2 >= EVT size.
+   2. CSTACK is first so overflow will cause fault rather than corrupt data.
+*/

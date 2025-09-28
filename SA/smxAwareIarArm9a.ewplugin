@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<plugin>
+  <name>smxAware</name>
+  <dllFile>$EW_DIR$\arm\plugins\rtos\SMX\smxAwareIarArm9a.dll</dllFile>
+  <description>RTOS Awareness for SMX. Little Endian. Iar 9.4</description>
+  <defaultLoad>no</defaultLoad>
+  <originator>Micro Digital Inc</originator>
+  <version>9.40</version>
+</plugin>

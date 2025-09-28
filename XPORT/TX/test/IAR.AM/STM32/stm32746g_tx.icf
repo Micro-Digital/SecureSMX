@@ -1,0 +1,69 @@
+//****************************************************************************
+// stm32746g_fr.icf                                         Version 5.4.0
+//
+// ILINK Command File for IAR EWARM, SMX, and STMicro STM32746G-EVAL or
+// STMicro STM32746G-DISCOVERY board.
+//
+// Internal ROM Internal RAM Version (ROM build targets)
+//
+// Copyright (c) 2015-2025 Micro Digital Inc.
+// All rights reserved. www.smxrtos.com
+//
+// Memory Layout:
+//
+//   ITCMRAM   [0x00000000--0x00003FFF]  (16KB)  Unused (ITCM RAM)
+//   ROM       [0x00200000--0x002FFFFF]   (1MB)  Code (Int Flash via ITCM interface)
+//   ROM       [0x08000000--0x080FFFFF]   (1MB)  Code (Int Flash via AXIM interface)
+//   TCRAM     [0x20000000--0x2000FFFF]  (64KB)  EVT, Main Stack (DTCM RAM)
+//   SRAM1     [0x20010000--0x2004BFFF] (240KB)  Data, EVB, EMAC buffers (Int SRAM)  
+//   SRAM2     [0x2004C000--0x2004FFFF]  (16KB)  Joined with SRAM1 (Auxiliary Int SRAM)
+//   RAM       [0xC0000000--0xC1FFFFFF]  (32MB)  LCD buffer (Ext SDRAM)
+//
+//****************************************************************************
+
+define symbol EVT_size = 4*(16+98); /* 98=SB_IRQ_MAX+1 <1> */
+define exported symbol evbsz = 0x4000;
+
+define memory mem with size = 4G;
+
+/* region definitions */
+define region ROM       = mem:[from 0x08000000 to 0x080FFFFF];  /* AXIM slower than ITCM but avoids problems for peripherals */
+define region SRAM      = mem:[from 0x20000000 to 0x2004FFFF];
+define region RAM       = mem:[from 0xC0000000 to 0xC1FFFFFF];
+
+/* empty block definitions */
+define block CSTACK     with size = 0x200,     alignment = 8   { }; /* Main Stack */
+define block EB         with size = 0xF0,      alignment = 4   { }; /* Error Buffer */
+define block EMAC_BUF   with size = 0x7000,    alignment = 8   { }; /* EMAC buffer */
+define block EVB        with size = evbsz,     alignment = 4   { }; /* Event Buffer */
+define block EVT        with size = EVT_size,  alignment = 512 { }; /* Exception Vector Table <1> */
+define block mheap      with size = 0x4000,    alignment = 16  { }; /* mheap */
+define block LCD_BUF    with size = 0x200000,  alignment = 8   { }; /* LCD buffer */
+keep  {block EB, block EMAC_BUF, block EVB, block EVT, block LCD_BUF};
+
+/* fast RAM block to order fast blocks <2> */
+define block FRAM       with fixed order {block CSTACK, block EVT};
+
+/* initialization */
+initialize by copy {rw};
+do not initialize  {section .noinit, section .mheap};
+
+/* placements */
+place at start of ROM   {ro section .intvec};
+place in ROM            {ro};
+place at start of SRAM  {block FRAM};
+place in SRAM           {block EB, block EVB, block EMAC_BUF, block mheap, rw};
+place at start of RAM   {block LCD_BUF};
+
+/* for smxAware */
+define exported symbol RAM_S  = start(RAM);
+define exported symbol RAM_E  = end(RAM);
+define exported symbol SRAM_S = start(SRAM);
+define exported symbol SRAM_E = end(SRAM);
+
+
+/* Notes:
+   1. Size = 4*(16 + SB_IRQ_MAX + 1). Must be aligned to power of 2 >= EVT size.
+   2. Ensures CSTACK is first, to detect main stack overflows. Also places 
+      critical blocks in TCRAM for speed.
+*/

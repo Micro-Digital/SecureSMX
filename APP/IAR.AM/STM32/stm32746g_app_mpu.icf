@@ -1,0 +1,198 @@
+//****************************************************************************
+// stm32746g_app_mpu.icf                                    Version 5.4.0
+//
+// ILINK linker command file for STMicro STM32746G-EVAL and STM32746G-DISCOVERY
+// boards and SecureSMX (MPU).
+//
+// Internal ROM Internal RAM Version for SecureSMX with MPU
+//
+// Copyright (c) 2015-2025 Micro Digital Inc.
+// All rights reserved. www.smxrtos.com
+//
+// Memory Layout:
+//
+//   ITCMRAM   [0x00000000--0x00003FFF]  (16KB)  Unused (ITCM RAM)
+//   ROM       [0x00200000--0x002FFFFF]   (1MB)  Code (Int Flash via ITCM interface)
+//   ROM       [0x08000000--0x080FFFFF]   (1MB)  Code (Int Flash via AXIM interface)
+//   TCRAM     [0x20000000--0x2000FFFF]  (64KB)  EVT, Main Stack (DTCM RAM)
+//   SRAM1     [0x20010000--0x2004BFFF] (240KB)  Data, EMAC buffers (Int SRAM)  
+//   SRAM2     [0x2004C000--0x2004FFFF]  (16KB)  Joined with SRAM1 (Auxiliary Int SRAM)
+//   RAM       [0xC0000000--0xC1FFFFFF]  (32MB)  LCD buffer (Ext SDRAM)
+//
+//****************************************************************************
+
+define symbol EVT_size = 4*(16+98); /* 98=SB_IRQ_MAX+1 <1> */
+define exported symbol evbsz     = 0x10000;
+define exported symbol lcdbufsz  = 0x200000;
+define exported symbol cphsz     = 0x400;    /* console partition heap */
+define exported symbol fshsz     = 0x4000;   /* file system heap */
+
+define memory mem with size = 4G;
+
+/* memory region definitions */
+define region ROM       = mem:[from 0x08000000 to 0x080FFFFF];  /*<7>*/
+define region SRAM      = mem:[from 0x20000000 to 0x2004FFFF];
+define region RAM       = mem:[from 0xC0000000 to 0xC1FFFFFF];
+
+/* empty block definitions */
+define block CSTACK     with size = 0x400,     alignment = 8   { };     /* Main Stack */
+define block EB         with size = 0xF0,      alignment = 4   { };     /* Error Buffer */
+define block EVB        with size = evbsz,     alignment = evbsz { };   /* Event Buffer */
+define block EVT        with size = EVT_size,  alignment = 512 { };     /* Exception Vector Table <1> */
+define block mheap      with size = 0x4000,    alignment = 16  { };     /* mheap */
+define block cp_heap    with size = cphsz,     alignment = 16  { };     /* console partition heap */
+define block fs_heap    with size = fshsz,     alignment = 16  { };     /* file system heap */
+define block LCD_BUF    with size = lcdbufsz,  alignment = lcdbufsz{ }; /* LCD buffer */
+keep  {block EB, block EVB, block EVT, block LCD_BUF};
+                                 
+/* MPU region sizes (each must be a power of 2) <2> */
+define exported symbol cpcsz     = 0x2000;   /* console partition */
+define exported symbol cpdsz     = 0x800;
+define exported symbol fpucsz    = 0x800;    /* FPU demo */
+define exported symbol fpudsz    = 0x400;
+define exported symbol fscsz     = 0x8000;   /* file system */
+define exported symbol fsdsz     = 0x8000;
+define exported symbol fpdcsz    = 0x800;    /* file portal demo */
+define exported symbol fpddsz    = 0x8000;
+define exported symbol lcdcsz    = 0x4000;   /* LCD demo */
+define exported symbol lcddsz    = 0x200;
+define exported symbol ledcsz    = 0x200;    /* LED demo */
+define exported symbol leddsz    = 0x0;
+define exported symbol scsz      = 0x20000;  /* system */
+define exported symbol sdsz      = 0x20000;
+define exported symbol ucomcsz   = 0x4000;   /* umode common */
+define exported symbol ucomdsz   = 0x100;
+
+/* plug block sizes <4> */
+define exported symbol pb1csz    = 0x3C00;   /* plug block <4a> */
+define exported symbol pb1dsz    = 0x2F00;
+
+/* standard clib functions permitted in umode */
+define block clib_code with alignment = 4
+                {ro object dl7M_tln.a, ro object m7M_tls.a, ro object rt7M_tl.a} /*<8>*/
+         except {ro object cstartup_M.o, ro object cppinit.o, ro object data_init.o,
+                 ro object fpinit_M.o, ro object rle_init_single.o, ro object zero_init3.o,
+                 ro object cmain.o, ro object cmain_call_ctors.o,
+                 ro object exit.o, ro object cexit.o, ro object XXexit.o};
+define block clib_data with alignment = 4
+                {rw object dl7M_tln.a, rw object m7M_tls.a, rw object rt7M_tl.a}
+         except {rw object zero_init3.o, rw object rle_init_single.o};
+
+/* console partition regions */
+define block cp_code with size = cpcsz*5/8, alignment = cpcsz 
+                {ro section .cp.text, ro section .cp.rodata};
+define block cp_data with size = cpdsz*6/8, alignment = cpdsz
+                {block cp_heap, rw section .cp.data, rw section .cp.bss};
+
+/* ucom regions (umode) */
+define block ucom_code with fixed order, size = ucomcsz*5/8, alignment = ucomcsz
+                {ro section .ucom.reset, ro section .ucom.text, ro section .ucom.rodata, /*<3>*/
+                 ro section .svc.text, ro section .svc.rodata, block clib_code};
+define block ucom_data with fixed order, size = ucomdsz*8/8, alignment = ucomdsz
+                {rw section .ucom.bss, rw section .ucom.data, rw section .ucom.noinit,
+                 rw section .svc.bss, rw section .svc.data, rw section .svc.noinit,
+                 block clib_data};
+
+/* file system regions <2> */
+define block fs_code with fixed order, size = fscsz*5/8, alignment = fscsz    
+                {ro section .fs.reset, ro section .fs.text, ro section .fs.rodata};
+define block fs_data with size = fsdsz*5/8, alignment = fsdsz    
+                {rw section .fs.bss, rw section .fs.data,rw section .fs.noinit, 
+                 block fs_heap};
+
+/* application regions <2> */
+define block led_code with size = ledcsz*8/8,  alignment = ledcsz   
+                {ro section .led.text,   ro section .led.rodata};
+define block lcd_code with size = lcdcsz*5/8,  alignment = lcdcsz   
+                {ro section .lcd.text,   ro section .lcd.rodata};
+define block lcd_data with size = lcddsz*7/8,  alignment = lcddsz   
+                {rw section .lcd.bss,    rw section .lcd.data, rw section .lcd.noinit};
+define block fpu_code with size = fpucsz*6/8,  alignment = fpucsz   
+                {ro section .fpu.text,   ro section .fpu.rodata};
+define block fpu_data with size = fpudsz *7/8, alignment = fpudsz   
+                {rw section .fpu.bss,    rw section .fpu.data, rw section .fpu.noinit};
+define block fpd_code with fixed order, size = fpdcsz*7/8, alignment = fpdcsz    
+                {ro section .fpd.reset, ro section .fpd.text, ro section .fpd.rodata};
+define block fpd_data with size = fpddsz*5/8, alignment = fpddsz    
+                {rw section .fpd.bss, rw section .fpd.data,rw section .fpd.noinit};
+
+/* system regions (pmode) */
+define block sys_code with fixed order, size = scsz*8/8, alignment = scsz
+                {block ucom_code, ro section .intvec, ro section .sys.text, 
+                 ro section .sys.rodata, block cp_code, block fs_code}; /*<3>*/
+define block sys_data with fixed order, size = sdsz*6/8, alignment = sdsz 
+                {block CSTACK, block EVT, block EB, rw section .sys.bss, 
+                 rw section .sys.data, rw section .sys.noinit, block mheap, 
+                 block ucom_data, block cp_data, block fs_data}; /*<6>*/
+
+/* initialization */
+initialize by copy with packing = zeros {rw};
+do not initialize  {section .noinit, section .fs.noinit, section .mheap};
+
+/* MPU region sizes for initialization (each must be a power of 2) */
+define exported symbol romsz    = 0x100000;
+define exported symbol sramsz   = 0x80000;  /* to satisfy power of 2 rqmnt */
+define exported symbol ramsz    = 0x2000000;
+
+/* plug blocks for MpuPacker optimization (MPUPACKER:PLUG) <4> */
+define block pb1_code with size = pb1csz, alignment = 4 {ro section .pb1.text,
+                         ro section .pb1.rodata, ro};
+define block pb1_data with size = pb1dsz, alignment = 4  {rw section .pb1.bss, 
+                         rw section .pb1.data, rw section .pb1.noinit, rw};
+
+/* collection blocks for MpuPacker optimization (MPUPACKER:COLL) <5> */
+define block rom_block with fixed order, size = romsz*2/8, alignment = romsz
+                        {block sys_code, block lcd_code, block fpu_code, 
+                         block led_code, block fpd_code}; 
+define block sram_block with fixed order, size = sramsz*4/8, alignment = sdsz
+                        {block sys_data, block lcd_data, block fpu_data, 
+                         block fpd_data}; 
+define block ram_block with fixed order, size = ramsz*8/8, alignment = ramsz
+                        {block EVB, block LCD_BUF};
+
+/* locate plug blocks outside of collection blocks until MpuPacker supports */
+define block rom_block_all with fixed order, size = romsz*3/8, alignment = romsz
+                        {block rom_block, block pb1_code}; 
+define block sram_block_all with fixed order, size = sramsz*5/8, alignment = sramsz
+                        {block sram_block, block pb1_data};
+
+/* placements */
+place in ROM            {block rom_block_all};
+place in SRAM           {block sram_block_all};
+place in RAM            {block ram_block};
+
+/* memory markers for smxAware */
+define exported symbol RAM_S  = start(RAM);
+define exported symbol RAM_E  = end(RAM);
+define exported symbol SRAM_S = start(SRAM);
+define exported symbol SRAM_E = end(SRAM);
+
+/* Notes:
+   1. Size = 4*(16 + SB_IRQ_MAX + 1). Must be aligned to power of 2 >= EVT size.
+   2. Alignment must = region_size. Actual size = closest N*(region_size/8) 
+      above needed size, assuming use of subregion disables. Region size
+      must be used in region definition for MPA.
+   3. ucom_code has .ucom.reset at start, so ucom_code can be put at start of
+      sys_code, to minimize waste. It is ok that full EVT (.intvec) is not first 
+      since VTOR points to it.
+   4. Plug blocks are used to fill the gaps between MPU region blocks. They
+      normally contain startup, initialization and exit code that is not in MPU 
+      regions. By placing a plug block into a gap caused by the ARMM7 MPU region 
+      block alignment requirement, the memory requirement is reduced. 
+      Note: MpuPacker requires "MPUPACKER:PLUG" to find the plug blocks.
+   4a.The linker complains pb1_code/data sizes are too small if you use this
+      file for an SMX (not SecureSMX, SMX_CFG_SSMX = 0) build. Change the
+      project settings for the linker to use the non-MPU .icf file instead. 
+   5. Run MpuPacker.exe from the command line in order to optimize block order 
+      for best memory usage. Replace the following collection block order with 
+      the recommended block order. Then follow the instructions to minimize 
+      block tails. Normally this is done for release.
+      Note: MpuPacker requires "MPUPACKER:COLL" to find the collection blocks.
+   6. CSTACK is first so overflow will cause an MMF rather than corrupt data.
+   7. AXIM is slower than ITCM but avoids problems for peripherals.
+      AXIM: define region ROM = mem:[from 0x08000000 to 0x080FFFFF];
+      ITCM: define region ROM = mem:[from 0x00200000 to 0x002FFFFF];
+      Ensure that mpa.c matches addrs 0x08000000 vs 0x00200000.
+   8. These are libraries of clib functions. Undesirable functions are removed
+      by except{...}
+*/

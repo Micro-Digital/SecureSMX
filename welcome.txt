@@ -1,0 +1,125 @@
+Getting Started with SecureSMX
+
+Welcome to SecureSMX (SSMX) framework. Its purposes are to enable you 
+to easily evaluate the security features of SSMX and to use it as the 
+foundation for your next embedded or IoT project! SecureSMX is based 
+upon the SMX RTOS, which has been in use for 45 years in hundreds of 
+devices, so it is quite solid.
+
+First Tour
+For this tour you need only an editor or Notepad. Following power up, 
+__low_level_init() (in BSP\ARM\STM32\STM32F7xx\startup.c) does a small 
+amount of initialization, then initialization code created by the 
+compiler runs, and main() (in APP\main.c) runs. As you can see, main()
+does hardware, tick, and MPU initialization. (#if SMX_CFG_SSMX enables
+SecureSMX.)
+
+Then control goes to smx_Go() (in SMX\xgo.c). smx_Go() does all of
+the initialization necessary to start SMX and SecureSMX. Near the end, 
+it creates the smx_Idle task with maximum priority and ainit() as its code. 
+Note also the mp_MPACreate(), which creates the Memory Protection Array 
+(MPA) for idle during initialization. This is loaded into the MPU when 
+idle starts running. It is created from the mpa_tmplt_init template. 
+(Ignore SMX_TSMX, which is for our regression test.) To see all of the 
+MPA templates used in SSMX framework, see mpa7.c (in SSMX\ARMM). These 
+are for Cortex-v7M. mpa8.c has the MPA templates for Cortex-v8M. Notice 
+that there is quite a difference.
+
+Control now goes to ainit() in main.c. This does primarily application 
+initialization and creates application tasks. (These are demos, which
+would be replaced with your own code.) At the end, smx_TaskStartNew()
+restarts the idle task with minimum priority and smx_IdleMain() code.
+Also idle is given a runtime MPA based upon mpa_tmplt_idle, which does 
+not include initialization and exit code. See the linker command file, 
+stm32746g_app_mpu.icf (in APP\IAR.AM\STM32) and mpa7.c to understand the
+full difference. Now the higher-priority demos start running and idle
+runs only when they don't.
+
+The most interesting demo is fpdemo (in APP\DEMO\fpdemo.c). This demo 
+runs in an isolated partition and accesses FatFs in another isolated
+partition via a "tunnel portal". There is little common code and no
+common data between these partitions. fpdemo_init() creates the fpdemo 
+task and its MPA and starts it. After ainit() finishes, fpdemo_main() 
+runs. It opens the console portal in the console partition, waits for 
+the SD card to be inserted, opens the file portal in the FatFs 
+partition, and then calls fpdemo_perf().
+
+fpdemo_perf() illustrates making FatFs calls, such as f_mount(), 
+measuring performance of file reads and writes, and outputting 
+performance messages to the console via the console portal. There is 
+a lot to study here. Note #include "fpmap.h" at the top of fpdemo.c 
+translates FatFs (eg. f_mount) calls to shell function calls (e.g. 
+fp_mount). These are implemented in fpcli.c (in XMW\FatFs\portal\). 
+These shell functions convert FatFs calls to protected messages 
+(pmsgs) that are sent to the FatFs portal. Here, fp_server() 
+interprets the pmsgs and makes the required FatFs calls.
+
+Other demos illustrate other types of partitions and portals. You are 
+now on "free time" for the rest of this tour.
+
+Live Tour
+It's more fun to run! The SSMX framework supports the STMicro
+STM32F746G-Discovery board for Cortex-v7M. This is a low-cost, readily
+available board from many sources. For Cortex-v8M, the SSMX framework
+supports the NXP LPCExpresso55S69 board -- also a low-cost, readily
+available board from many sources. For this live tour, we recommend
+the first board since FatFs is not supported for the LPC board. Or,
+if you have it, the SSMX framework also supports the STM32746G-EVAL2
+board with FatFs. An I-jet debug unit is needed for this board.
+
+Connections:
+
+  STM32F746G-Discovery:
+   USB mini-B to A from CN14 USB ST-LINK to PC
+   This gives power and a virtual COM port for TeraTerm.
+
+  STM32746G-EVAL2:
+   I-jet to board and PC
+   RS232 to USB adapter cable from CN7 USART1 DB9 to PC for TeraTerm
+
+  LPCXpresso55S69: 
+   USB micro-B to A from P6 Debug Link to PC
+   This gives power and a virtual COM port for TeraTerm.
+
+Note: We recommend you delete build and BSP directories for boards you
+don't have in APP\IAR.AM and BSP directories, to simplify.
+
+For development and debugging, SSMX supports the IAR EWARM tool suite. 
+We use EWARM because it is very powerful and intuitive to use, and
+SecureSMX requires some of its special features to control code
+and data location. It also supports our kernel-aware debugger plugin,
+smxAware, which is especially needed when working with the MPU.
+If you don't have EWARM, get a free trial from:
+www.iar.com/embedded_development-tools/free-trials to use for this 
+live tour. Use v9.40.1 or later. Contact us if you have a problem with
+a later version.
+
+Build App: Load EWARM. In the EWARM window, click on File, Open 
+Workspace, go to APP\IAR.AM\STM32, and click on the project file
+App_stm32746gdis_iar940.eww for the Discovery board. Then click the 
+Make button in the menu bar or F7. When the make is complete, click 
+the Download and Debug button in the menu bar (green circle) to 
+download the code to the board. This will stop at main(). To run, 
+click the Go button (white arrow). When running, to stop and restart, 
+click the Debug Without Downloading button (white circle).
+
+Now the fun. The C-SPY debugger will stop at main(). From there, we 
+recommend that you repeat the First Tour, this time tracing code and 
+possibly entering functions to gain more insight. When you reach the 
+end of ainit(), true multitasking begins. Then, the best approach is 
+to put breakpoints at the main functions of tasks that you wish to 
+investigate. For example, place a breakpoint at fpdemo_main() in order 
+to trace though the FatFs demo in order to see how it really works.
+
+You can also put a breakpoint at fpdemo_msg() at the end of 
+fpdemo_perf() in order to trace through the cp portal into the console 
+partition. This is a different type of portal that we call a "free 
+message portal". The leddemo and fpudemo illustrate other partitions.
+You can also trace into SMX if you want to see how various services,
+portals, the scheduler, and eheap work.
+
+Manuals and BSP notes are in DOC. Release notes summarize some key
+information about features and settings.
+
+We hope you enjoy the tours. Any questions or suggestions? Contact 
+support@smxrtos.com. We'd like to hear from you.
