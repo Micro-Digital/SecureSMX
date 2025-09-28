@@ -1,8 +1,10 @@
 # SecureSMX
 
-Release notes (DOC\smx540.txt) have information about boards supported and
+Release notes in DOC\smx540.txt have information about boards supported and
 configuration. We recommend using STMicro STM32F746G-Discovery (Cortex-M7)
 which is commonly available for about $50 (e.g. DigiKey STM32F746G-DISCO).
+Select the board in CFG\iararm.h and open the corresponding project file
+in the APP directory.
 
 Manuals are in DOC\Manuals. The SecureSMX manual supplements the SMX manuals.
 
