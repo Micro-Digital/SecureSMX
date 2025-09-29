@@ -3,7 +3,7 @@
 *
 * FRPort Task Functions
 *
-* Copyright (c) 1994-2025 Micro Digital Inc.
+* Copyright (c) 2024-2025 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
 * This software, documentation, and accompanying materials are made available
