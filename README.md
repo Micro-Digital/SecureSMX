@@ -1,4 +1,10 @@
-# SecureSMX
+# SecureSMX Secure RTOS
+
+SecureSMX enables dividing an application into fully isolated partitions.
+See www.smxrtos.com/securesmx for background.
+
+Note that this can be configured to just SMX RTOS if security features
+are not desired. See the note about SMX_CFG_SSMX in the release notes.
 
 Release notes in DOC\smx540.txt have information about boards supported and
 configuration. We recommend using STMicro STM32F746G-Discovery (Cortex-M7)
@@ -12,5 +18,10 @@ IAR Embedded Workbench for Arm v9.40.2 or later is required. We mainly work
 with this version currently, but we also tested quickly with v9.70.1.
 
 See license.txt and welcome.txt.
+
+The executables (smxAware in SA and utilities in BIN) cannot be built from
+source code in this repo, so they are supplied as .exe files. Alternatively,
+we could post them on our FTP site, but you need them, and keeping them here
+assures you get updates (esp smxAWare) when the code is changed.
 
 Support services are offered by Micro Digital. Inquire at support@smxrtos.com.
