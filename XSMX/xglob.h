@@ -83,6 +83,7 @@ extern PCB        smx_mcbs;         /* MCB pool */
 #if SMX_CFG_SSMX
 extern bool       smx_mpu_br_off;   /* background region was off in interrupted code */
 #endif
+extern u16        smx_mshwm;        /* main stack high water mark */
 extern bool       smx_mshwmv;       /* main stack high water mark valid */
 extern u32        smx_mstop;        /* main stack top -- used in xarmm_iar.s */
 extern PCB        smx_mucbs;        /* MUCB pool */

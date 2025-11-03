@@ -73,6 +73,7 @@ PCB            smx_mcbs;               /* MCB pool */
 #if SMX_CFG_SSMX
 bool           smx_mpu_br_off;         /* background region was off in interrupted code */
 #endif
+u16            smx_mshwm;              /* main stack high water mark */
 bool           smx_mshwmv = false;     /* main stack high water mark valid */
 u32            smx_mstop;              /* main stack top -- used in xarmm_iar.s */
 PCB            smx_mucbs;              /* MUCB pool */

@@ -568,8 +568,9 @@ void smx_StackScan(void)
    /* scan main stack */
    if (smx_mshwmv == false)
    {
+      smx_mshwm = sb_MS_GET_SIZE() - sb_MSScan();
       smx_mshwmv = true;
-      if (sb_MSScan() >= sb_MS_GET_SIZE())
+      if (smx_mshwm >= sb_MS_GET_SIZE())
          smx_ERROR(SMXE_MSTK_OVFL, 2);
       return;
    }

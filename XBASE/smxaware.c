@@ -132,8 +132,7 @@ u32      smx_frport = 1;            /* FreeRTOS port in use */
 static void dummy_use(u8 * par);
 static SCB_PTR in_sa_print;         /* protect the sa_Print() call */
 
-void*    smx_sstop;
-u32      smx_sssize;
+u32      smx_mssize;
 
 bool smxaware_live_init(void);
 bool smxaware_live_exit(void);
@@ -256,8 +255,8 @@ bool smxaware_init(void)
   #if defined(SMX_FRPORT)
    dummy_use((u8 *) &smx_frport);
   #endif
-   smx_sstop = sb_MS_GET_TOP();
-   smx_sssize = sb_MS_GET_SIZE();
+   smx_mstop = (u32)sb_MS_GET_TOP();
+   smx_mssize = sb_MS_GET_SIZE();
 
    /* Initialize the tracing/logging feature */
    sa_PrintInit();
