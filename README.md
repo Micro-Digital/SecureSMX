@@ -22,6 +22,6 @@ See license.txt and welcome.txt.
 The executables (smxAware in SA and utilities in BIN) cannot be built from
 source code in this repo, so they are supplied as .exe files. Alternatively,
 we could post them on our FTP site, but you need them, and keeping them here
-assures you get updates (esp smxAWare) when the code is changed.
+ensures you get updates (esp smxAware) when the code is changed.
 
 Support services are offered by Micro Digital. Inquire at support@smxrtos.com.
