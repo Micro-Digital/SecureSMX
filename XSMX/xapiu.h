@@ -1,22 +1,26 @@
 /*
-* xapiu.h                                                   Version 5.4.0
+* xapiu.h                                                   Version 6.0.0
 *
 * smx API functions for umode, only
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -214,13 +218,17 @@ bool     mpu_MPASlotMove(u8 dn, u8 sn);
 
 #if SMX_CFG_PORTAL
 bool     mpu_FPortalClose(FPCS* pch, u8 xsn);
-bool     mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, u32 tmo=SMX_TMO_INF, const char* rxname=NULL);
+bool     mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo=SMX_TMO_INF, const char* rxname=NULL);
 MCB_PTR  mpu_FPortalReceive(FPCS* pch, u8** dpp);
 bool     mpu_FPortalSend(FPCS* pch, MCB* pmsg);
 bool     mpu_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 void     mpu_PortalEM(PS* ph, PERRNO errno, PERRNO* ep);
 void     mpu_PortalLog(u32 id, u32 p1=0, u32 p2=0, u32 p3=0, u32 p4=0, u32 p5=0, u32 p6=0);
 void     mpu_PortalRet(u32 id, u32 rv);
+bool     mpu_TPortalClose(TPCS* pch);
+bool     mpu_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, const char* ssname, const char* csname);
+bool     mpu_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
+bool     mpu_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
 #endif
 #endif
 }
@@ -399,13 +407,17 @@ bool     mpu_MPACreateLSR(LCB_PTR lsr, MPA* tmp, u32 tmsk, u32 mpasz);
 bool     mpu_MPASlotMove(u8 dn, u8 sn);
 #if SMX_CFG_PORTAL
 bool     mpu_FPortalClose(FPCS* pch, u8 xsn);
-bool     mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, u32 tmo, const char* rxname);
+bool     mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo, const char* rxname);
 MCB_PTR  mpu_FPortalReceive(FPCS* pch, u8** dpp);
 bool     mpu_FPortalSend(FPCS* pch, MCB* pmsg);
 bool     mpu_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 void     mpu_PortalEM(PS* ph, PERRNO errno, PERRNO* ep);
 void     mpu_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6);
 void     mpu_PortalRet(u32 id, u32 rv);
+bool     mpu_TPortalClose(TPCS* pch);
+bool     mpu_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, const char* ssname, const char* csname);
+bool     mpu_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
+bool     mpu_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
 #endif
 #endif
 #endif /* __cplusplus */
@@ -429,7 +441,7 @@ void     mpu_PortalRet(u32 id, u32 rv);
 
 #define smx_EventFlagsPulse(eg, pmsk)           smxu_EventFlagsPulse(eg, pmsk)
 #define smx_EventFlagsSet(eg, smsk, pcmsk)      smxu_EventFlagsSet(eg, smsk, pcmsk)
-#define smx_EventFlagsTest(eg, tmsk, mode, pcmsk, tmo)      smxu_EventFlagsTest(eg, tmsk, mode, pcmsk, tmo)
+#define smx_EventFlagsTest(eg, tmsk, mode, pcmsk, tmo)  smxu_EventFlagsTest(eg, tmsk, mode, pcmsk, tmo)
 #define smx_EventFlagsTestStop(eg, tmsk, mode, pcmsk, tmo)  smxu_EventFlagsTestStop(eg, tmsk, mode pcmsk, tmo)
 #define smx_EventGroupClear(eg, imsk)           smxu_EventGroupClear(eg, imsk)
 #define smx_EventGroupCreate(imsk, name, eghp)  smxu_EventGroupCreate(imsk, name, eghp)
@@ -513,7 +525,7 @@ void     mpu_PortalRet(u32 id, u32 rv);
 #define smx_PipePut8(pipe, b)                   smxu_PipePut8(pipe, b)
 #define smx_PipePut8M(pipe, bp, lim)            smxu_PipePut8M(pipe, bp, lim)
 #define smx_PipePutPkt(pipe, psrc)              smxu_PipePutPkt(pipe, psrc)
-#define smx_PipePutPktWait(pipe, psrc, tmo, mode)      smxu_PipePutPktWait(pipe, psrc, tmo, mode)
+#define smx_PipePutPktWait(pipe, psrc, tmo, mode)  smxu_PipePutPktWait(pipe, psrc, tmo, mode)
 #define smx_PipePutPktWaitStop(pipe, psrc, tmo, mode)  smxu_PipePutPktWaitStop(pipe, psrc, tmo, mode)
 #define smx_PipeResume(pipe)                    smxu_PipeResume(pipe)
 #define smx_PipeSet(pipe, par, v1, v2)          _Pragma("error\"smx_PipeSet() not available in umode\"")
@@ -524,9 +536,9 @@ void     mpu_PortalRet(u32 id, u32 rv);
 #define smx_PBlockRelHeap(bp, sn, hn)           smxu_PBlockRelHeap(bp, sn, hn)
 #define smx_PBlockRelPool(bp, sn, pool, clrsz)  smxu_PBlockRelPool(bp, sn, pool, clrsz)
 #define smx_PMsgGetHeap(sz, bpp, sn, attr, hn, mhp)  smxu_PMsgGetHeap(sz, bpp, sn, attr, hn, mhp)
-#define smx_PMsgGetPool(pool, bpp, sn, attr, mhp)    smxu_PMsgGetPool(pool, bpp, sn, attr, mhp)
-#define smx_PMsgMake(bp, sz, sn, attr, name, mhp)    smxu_PMsgMake(bp, sz, sn, attr, name, mhp)
-#define smx_PMsgReceive(xchg, bpp, dsn, tmo, mhp)    smxu_PMsgReceive(xchg, bpp, dsn, tmo, mhp)
+#define smx_PMsgGetPool(pool, bpp, sn, attr, mhp)  smxu_PMsgGetPool(pool, bpp, sn, attr, mhp)
+#define smx_PMsgMake(bp, sz, sn, attr, name, mhp)  smxu_PMsgMake(bp, sz, sn, attr, name, mhp)
+#define smx_PMsgReceive(xchg, bpp, dsn, tmo, mhp)  smxu_PMsgReceive(xchg, bpp, dsn, tmo, mhp)
 #define smx_PMsgReceiveStop(xchg, bpp, dsn, tmo, mhp) smxu_PMsgReceiveStop(xchg, bpp, dsn, tmo, mhp)
 #define smx_PMsgRel(mhp, clrsz)                 smxu_PMsgRel(mhp, clrsz)
 #define smx_PMsgReply(msg)                      smxu_PMsgReply(msg)
@@ -572,7 +584,7 @@ void     mpu_PortalRet(u32 id, u32 rv);
 #define smx_TimerReset(tmr, tlp)                smxu_TimerReset(tmr, tlp)
 #define smx_TimerSetLSR(tmr, lsr, opt, par)     _Pragma("error\"smx_TimerSetLSR() not available in umode\"")
 #define smx_TimerSetPulse(tmr, per, width)      smxu_TimerSetPulse(tmr, per, width)
-#define smx_TimerStart(tmhp, dly, per, lsr, name)     smxu_TimerStart(tmhp, dly, per, lsr, name)
+#define smx_TimerStart(tmhp, dly, per, lsr, name)  smxu_TimerStart(tmhp, dly, per, lsr, name)
 #define smx_TimerStartAbs(tmhp, time, per, lsr, name) smxu_TimerStartAbs(tmhp, time, per, lsr, name)
 #define smx_TimerStop(tmr, tlp)                 smxu_TimerStop(tmr, tlp)
 
@@ -581,13 +593,17 @@ void     mpu_PortalRet(u32 id, u32 rv);
 #define mp_MPASlotMove(dn, sn)                  mpu_MPASlotMove(dn, sn)
 
 #define mp_FPortalClose(pch, xsn)               mpu_FPortalClose(pch, xsn)
-#define mp_FPortalOpen(pch, csn, msz, nmsg, pri, tmo, rxname)  mpu_FPortalOpen(pch, csn, msz, nmsg, pri, tmo, rxname)
+#define mp_FPortalOpen(pch, csn, msz, nmsg, tmo, rxname)  mpu_FPortalOpen(pch, csn, msz, nmsg, tmo, rxname)
 #define mp_FPortalReceive(pch, dpp)             mpu_FPortalReceive(pch, dpp)
 #define mp_FPortalSend(pch, pmsg)               mpu_FPortalSend(pch, pmsg)
 #define mp_FTPortalSend(pch, bp, pmsg)          mpu_FTPortalSend(pch, bp, pmsg)
 #define mp_PortalEM(ph, errno, ep)              mpu_PortalEM(ph, errno, ep)
 #define mp_PortalLog(id, p1, p2, p3, p4, p5, p6)  mpu_PortalLog(id, p1, p2, p3, p4, p5, p6)
 #define mp_PortalRet(id, rv)                    mpu_PortalRet(id, rv)
+#define mp_TPortalClose(pch)                    mpu_TPortalClose(pch)
+#define mp_TPortalOpen(pch, msz, thsz, tmo, ssname, csname)  mpu_TPortalOpen(pch, msz, thsz, tmo, ssname, csname)
+#define mp_TPortalReceive(pch, dp, rqsz, tmo)   mpu_TPortalReceive(pch, dp, rqsz, tmo)
+#define mp_TPortalSend(pch, dp, rqsz, tmo)      mpu_TPortalSend(pch, dp, rqsz, tmo)
 
 /* only implemented User4 to save IDs, since only 256 for SVC, and > 5 pars not supported yet */
 #define smx_EVBLogUser0(h)                      smxu_EVBLogUser4(h, 0, 0, 0, 0)
@@ -595,7 +611,7 @@ void     mpu_PortalRet(u32 id, u32 rv);
 #define smx_EVBLogUser2(h, p1, p2)              smxu_EVBLogUser4(h, p1, p2, 0, 0)
 #define smx_EVBLogUser3(h, p1, p2, p3)          smxu_EVBLogUser4(h, p1, p2, p3, 0)
 #define smx_EVBLogUser4(h, p1, p2, p3, p4)      smxu_EVBLogUser4(h, p1, p2, p3, p4)
-#define smx_EVBLogUser5(h, p1, p2, p3, p4, p5)     smxu_EVBLogUser5(h, p1, p2, p3, p4, p5)
+#define smx_EVBLogUser5(h, p1, p2, p3, p4, p5)  smxu_EVBLogUser5(h, p1, p2, p3, p4, p5)
 #define smx_EVBLogUser6(h, p1, p2, p3, p4, p5, p6) smxu_EVBLogUser6(h, p1, p2, p3, p4, p5, p6)
 #define smx_EVBLogUserPrint(time, index)        smxu_EVBLogUserPrint(time, index)
 

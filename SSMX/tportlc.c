@@ -1,22 +1,26 @@
 /*
-* tportlc.c                                                 Version 5.4.0
+* tportlc.c                                                 Version 6.0.0
 *
 * Tunnel portal client functions and objects.
 *
-* Copyright (c) 2019-2025 Micro Digital Inc.
+* Copyright (c) 2019-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -25,59 +29,6 @@
 #include "xsmx.h"
 
 #if SMX_CFG_PORTAL
-
-#include "xapiu.h"
-
-#pragma diag_suppress=Ta168  /* override warning */
-#pragma section_prefix = ".ucom"
-
-/*
-*  mp_TPortalClose()
-*
-*  Sends CLOSE command to server and waits for ack, unless portal has been
-*  deleted. Clears msg hdr and TPCS after handles. Deletes csem and ssem and
-*  returns true unless a semaphore fails to delete.
-*/
-bool mp_TPortalClose(TPCS* pch, u32 tmo)
-{  
-   TPMH* mhp = pch->mhp; /* portal msg header pointer */
-
-   mp_PORTAL_LOG2(MP_ID_TPORTAL_CLOSE, (u32)pch, tmo);
-
-   /* send CLOSE command to server to close portal and wait for ack */
-   if (pch->sxchg != NULL)
-   {
-      mhp->cmd = CLOSE;
-      /* if client marked closed due to timeout, mark open and clear csem 
-         so following operations work */
-      if (!pch->open)
-      {
-         pch->open = true;
-         smx_SemClear(pch->csem);
-      }
-      smx_SemSignal(pch->ssem);
-      smx_SemTest(pch->csem, tmo);
-   }
-
-   /* clear pmsg header and TPCS: open, shp, mdp, mdsz, and data */
-   memset((void*)mhp, 0, sizeof(TPMH));
-   pch->open = false;
-   memset((void*)&pch->shp, 0, sizeof(TPCS)-MP_TPCS_MHP_OFFSET);
-
-   /* delete semaphores */
-   if (!smx_SemDelete(&pch->csem) || !smx_SemDelete(&pch->ssem))
-   {
-      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, false);
-      return false; /* error = SMXE_INV_SCB */
-   }
-   else
-   {
-      smx_HT_DELETE(pch);  /* for smxAware */
-      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, true);
-      return true;
-   }
-}
-
 /*
 *  mp_TPortalOpen()
 *
@@ -93,14 +44,14 @@ bool mp_TPortalClose(TPCS* pch, u32 tmo)
 *  2. pch->mhp = msg->bp (done via par to smx_PMsgGetHeap()).
 *  3. pch->sxchg and pch->name loaded (done by TPortalCreate()).
 */
-bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo, 
+bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, 
                                        const char* ssname, const char* csname)
 {
+   bool  csem_cre = false;       /* csem created now */
    TPMH* mhp  = pch->mhp;        /* message header pointer */
    TOMH* omsp = (TOMH*)pch->mhp; /* OPEN message pointer */
-   bool  csem_cre = false;       /* csem created now */
 
-   mp_PORTAL_LOG6(MP_ID_TPORTAL_OPEN, (u32)pch, msz, thsz, pri, tmo, (u32)ssname);  /* <1> */
+   mp_PORTAL_LOG6(MP_ID_TPORTAL_OPEN, (u32)pch, msz, thsz, tmo, (u32)ssname, (u32)csname);
 
    /* abort if portal does not exist */
    if (pch->sxchg == NULL)
@@ -118,7 +69,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
       return false;
    }
 
-   /* create client semaphore for portal unless it already exists <2> */
+   /* create client semaphore for portal unless it already exists <1> */
    if (pch->csem == NULL)
    {
       pch->csem = smx_SemCreate(SMX_SEM_EVENT, 1, csname ? csname : "csem", 0);
@@ -130,7 +81,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
       csem_cre = true;
    }
 
-   /* create server semaphore for portal unless it already exists <2> */
+   /* create server semaphore for portal unless it already exists <1> */
    if (pch->ssem == NULL)
    {
       pch->ssem = smx_SemCreate(SMX_SEM_EVENT, 1, ssname ? ssname : "ssem", 0);
@@ -149,7 +100,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
 
    /* load OPEN msg */
    omsp->type  = TUNNEL;
-   omsp->cmd   = OPEN;
+   omsp->cmd   = CLOSE; /*<3>*/
    omsp->con.eod  = false;
    omsp->con.sod  = false;
    omsp->errno   = SMXE_OK;
@@ -158,14 +109,14 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
    omsp->csem  = pch->csem;
    omsp->ssem  = pch->ssem;
    omsp->thsz  = thsz;
+   omsp->cmd   = OPEN;
 
    /* ensure csem clear in case still set from prior use of portal */
    if (!csem_cre)
    {
       smx_SemClear(pch->csem);
    }
-   /* send bound msg to portal xchg and wait for ack */
-   smx_PMsgSendB(pch->pmsg, pch->sxchg, pri, 0);
+   smx_PMsgSendB(pch->pmsg, pch->sxchg, smx_ct->pri, 0);
    if (smx_SemTest(pch->csem, tmo))
    {
       pch->open = true;
@@ -174,6 +125,45 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
    }
    mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
    return false;
+}
+
+/*
+*  mp_TPortalClose()
+*
+*  Sends CLOSE command to server. Allows server to close connection at its end,
+*  if not already closed, then closes connection at client's end. 
+*/
+bool mp_TPortalClose(TPCS* pch)
+{  
+   TPMH* mhp = pch->mhp; /* portal msg header pointer */
+
+   mp_PORTAL_LOG1(MP_ID_TPORTAL_CLOSE, (u32)pch);
+
+   /* send CLOSE command to server */
+   if (pch->sxchg != NULL)
+   {
+      mhp->cmd = CLOSE;
+      smx_SemSignal(pch->ssem);
+      smx_TaskBump(SMX_CT, SMX_PRI_NOCHG); /* allow server to close <4> */
+   }
+
+   /* clear TPCS from open down */
+   memset((void*)&pch->open, 0, 20);
+
+   /* restore client priority if it was promoted */
+   smx_ct->pri = smx_ct->prinorm;
+
+   /* delete semaphores */
+   if (!smx_SemDelete(&pch->csem) || !smx_SemDelete(&pch->ssem))
+   {
+      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, false);
+      return false; /* error = SMXE_INV_SCB */
+   }
+   else
+   {
+      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, true);
+      return true;
+   }
 }
 
 /*
@@ -187,10 +177,11 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
 *  false and reports it. In NO_COPY mode returns false and reports INV_SZ if 
 *  rqsz is too large. 
 */
+
 bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
 {
-   TPMH* mhp  = pch->mhp;     /* message header pointer */
-   u32   dsz;                 /* data size to transfer to cbuf */
+   TPMH* mhp  = pch->mhp;  /* message header pointer */
+   u32   dsz;              /* data size to transfer to cbuf */
 
    mp_PORTAL_LOG4(MP_ID_TPORTAL_RECEIVE, (u32)pch, (u32)dp, rqsz, tmo);
 
@@ -210,7 +201,7 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
       return false;
    }
 
-   mhp->cmd = RECEIVE;  /* <3> */
+   mhp->cmd = RECEIVE;  /* <2> */
    if (pch->open)
    {
       /* send RECEIVE command */
@@ -312,7 +303,7 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
    }
 
    mhp->cmpsz = 0;
-   mhp->cmd = SEND;  /* <3> */
+   mhp->cmd = SEND;  /* <2> */
    if (pch->open)
    {
       /* send SEND command */
@@ -425,10 +416,13 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
 #endif /* SMX_CFG_PORTAL */
 
 /* Notes:
-   1. SVC calls are limited to 7 parameters, so call ID and only the first 6
-      parameters are passed.
-   2. Allows reopening portal if closed or to change pmsg.
-   3. Have to set cmd before checking pch->open because client shell already
+   1. Allows reopening portal if closed or to change pmsg.
+   2. Have to set cmd before checking pch->open because client shell already
       has changed shp fields, so we can't leave msg type set to whatever it
-      was before, which could be OPEN, which server may then process.
+      was before, which could be OPEN, which server might then process.
+   3. mp_TPortalClose does not remove pmsg from sxchg if the connection was
+      already closed at its end. If the server preempts the client while it is
+      creating an OPEN message, this causes the server to remove the pmsg and 
+      to close an already closed connection.
+   4. It is safest to run the server before pmsg is changed.
 */

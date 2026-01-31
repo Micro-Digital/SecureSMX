@@ -127,7 +127,12 @@
 @endverbatim
   * @{
   */
-    
+
+//MDI:RM: Added
+#if SMX_CFG_SSMX && !defined(SMX_DEBUG)
+#pragma default_function_attributes = @ ".pb1.text" /* put into pb1_code */
+#endif
+
 /**
   * @brief  Performs the SDRAM device initialization sequence.
   * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains

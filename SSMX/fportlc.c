@@ -1,22 +1,26 @@
 /*
-* fportlc.c                                                 Version 5.4.0
+* fportlc.c                                                 Version 6.0.0
 *
 * Free message portal client functions and objects.
 *
-* Copyright (c) 2019-2025 Micro Digital Inc.
+* Copyright (c) 2019-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -61,12 +65,12 @@ bool mp_FPortalClose(FPCS* pch, u8 xsn)
          if (smx_TaskPeek(SMX_CT, SMX_PK_UMODE))
             dsn = sn;
          else
-            dsn = (sn << 4) + sn; /*<2>*/
+            dsn = (sn << 4) + sn; /*<1>*/
          #endif
          pmsg = smx_PMsgReceive(pch->rxchg, NULL, dsn, pch->tmo, 0);
          if (pmsg)
          {
-            smx_PMsgRel(&pmsg, 0);
+            smx_PMsgRel(&pch->pmsg, 0);
             pch->num--;
          }
          else
@@ -91,13 +95,13 @@ bool mp_FPortalClose(FPCS* pch, u8 xsn)
 *  up to nmsg pmsgs, and sends them to rxchg. Initializes FPCS fields, except
 *  name and sxchg.
 */
-bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, u32 tmo,
+bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo,
                                                             const char* rxname)
 {
    u32      i = 0; /* number of pmsgs created */
    MCB*     pmsg;
 
-   mp_PORTAL_LOG6(MP_ID_FPORTAL_OPEN, (u32)pch, csn, msz, nmsg, pri, tmo);  /* 6 max <1> */
+   mp_PORTAL_LOG6(MP_ID_FPORTAL_OPEN, (u32)pch, csn, msz, nmsg, tmo, rxname);
    if (pch->open)
    {
       mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, true);
@@ -124,7 +128,10 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, u32 tmo,
       {
          pmsg = smx_PMsgGetHeap(msz, NULL, csn, MP_DATARW, 0, 0);
          if (pmsg)
-            smx_PMsgSend(pmsg, pch->rxchg, pri, pch->rxchg);
+         {
+            pmsg->fpcsh = (u32)pch; /* link pmsg to its FPCS */
+            smx_PMsgSend(pmsg, pch->rxchg, smx_ct->pri, pch->rxchg);
+         }
          else
          {
             /* delete rxchg and release all pmsgs obtained */
@@ -138,7 +145,7 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, u32 tmo,
    pch->pmsg = NULL;
    pch->csn  = csn;
    pch->num  = i;
-   pch->pri  = pri;
+   pch->pri  = smx_ct->pri;
    pch->tmo  = tmo;
    pch->open = 1;
    mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, true);
@@ -170,10 +177,10 @@ MCB* mp_FPortalReceive(FPCS* pch, u8** dpp)
    if (smx_TaskPeek(SMX_CT, SMX_PK_UMODE))
       dsn = pch->csn;
    else
-      dsn = pch->csn << 4;    /*<2>*/
+      dsn = pch->csn << 4;    /*<1>*/
    #endif
    pmsg = smx_PMsgReceive(pch->rxchg, dpp, dsn, pch->tmo, 0);
-   pch->pmsg = pmsg ? pmsg : NULL;
+   pch->pmsg = pmsg;
    mp_PORTAL_RET(MP_ID_FPORTAL_RECEIVE, (u32)pmsg);
    return pmsg;
 }
@@ -198,6 +205,7 @@ bool mp_FPortalSend(FPCS* pch, MCB* pmsg)
    if (pch->pmsg == pmsg)
       pch->pmsg  = NULL;
    ret = smx_PMsgSend(pmsg, pch->sxchg, pch->pri, pch->rxchg);
+   smx_TaskBump(smx_ct, SMX_PRI_NOCHG); /* allow server to run */
    mp_PORTAL_RET(MP_ID_FPORTAL_SEND, ret);
    return ret;
 }
@@ -225,6 +233,7 @@ bool mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg)
    if (pch->pmsg == pmsg)
       pch->pmsg  = NULL;
    ret = smx_PMsgSend(pmsg, pch->sxchg, pch->pri, pch->rxchg);
+   smx_TaskBump(smx_ct, SMX_PRI_NOCHG); /* allow server to run */
    mp_PORTAL_RET(MP_ID_FTPORTAL_SEND, ret);
    return ret;
 }
@@ -232,9 +241,7 @@ bool mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg)
 
 /* 
    Notes:
-   1. mp_PortalLog() called via SVC which smx limits to 7 pars, which are
-      the call ID plus 6 pars.
-   2. For ARMM8, assumes that all pmsgs at rxchg have pmsg->con.sb = 1 and 
+   1. For ARMM8, assumes that all pmsgs at rxchg have pmsg->con.sb = 1 and 
       thus their data blocks are in sys_data. This is because mp_FPortalOpen()
       gets all pmsgs from mheap.
 */

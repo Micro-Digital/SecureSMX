@@ -1,22 +1,26 @@
 /*
-* svc.h                                                     Version 5.4.0
+* svc.h                                                     Version 6.0.0
 *
 * ARM-M SVC System call shell function macros
 *
-* Copyright (c) 2016-2025 Micro Digital Inc.
+* Copyright (c) 2016-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -26,6 +30,12 @@
 #define SVC_H
 
 #if SMX_CFG_SSMX
+
+/* Note: In the following macros, r12 passes flags to smx_SVC_Handler via the
+   exception frame.
+      Bit0 = 1 means > 4 pars.
+      Bit1 = 1 means deferred action function.
+*/
 
 /* Macro used for <= 4 parameters for non-heap functions. */
 #undef  sb_SVC     /* replace the one in barmm.h since SMX_CFG_SSMX not yet defined there */
@@ -40,6 +50,22 @@
 #define sb_SVCG4(id) \
    { \
       __asm("mov r12, #1"); \
+      __asm("push {r4} \n\t"); \
+      __asm("svc %0" : : "i" (id)); \
+      __asm("pop {r4} \n\t"); \
+   }
+
+/* Same as sb_SVC, except loads temp da_enter flag into r12 */
+#define sb_SVCda(id) \
+   { \
+      __asm("mov r12, #2"); \
+      __asm("svc %0" : : "i" (id)); \
+   }
+
+/* Same as sb_SVCG4, except loads n and temp da_enter flag into r12 */
+#define sb_SVCG4da(id) \
+   { \
+      __asm("mov r12, #3"); \
       __asm("push {r4} \n\t"); \
       __asm("svc %0" : : "i" (id)); \
       __asm("pop {r4} \n\t"); \

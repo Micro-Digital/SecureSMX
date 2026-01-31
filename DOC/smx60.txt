@@ -2,8 +2,8 @@
 
 
 
-                    smx Version 5.4.0 Release Notes
-                             July 15, 2025
+                    smx Version 6.0.0 Release Notes
+                           January 24, 2026
 
 
 
@@ -22,28 +22,12 @@
      Introduction
      ------------
 
-     v5.4 notable changes:
+     v6.0 notable changes:
 
-     - It changes to Apache v2.0 from a proprietary license.
-     - It simplifies App files.
-     - It detects SSR calls made from ISRs, a common mistake that can be
-       difficult to find.
-
-     v5.3 notable changes:
-
-     - It removes our middleware (smxFS, smxNS, smxUSB, etc).
-       Instead, the FatFs file system is included and has been modified
-       to use SecureSMX portals, as an example.
-     - It supports only ARM-M (Cortex-M) and IAR tools. Support for
-       traditional ARM (and remnants for other architectures) and other
-       tools has been removed.
-     - SMX_CFG_PRI_UP has been removed, which allowed reversing priority
-       numbering so 0 is highest, which was added for porting layers for
-       RTOSes that use this priority scheme. It was decided that this
-       did not offer enough benefit to offset the difficulty to maintain
-       the code as changes are made.
-     - BOOLEAN/TRUE/FALSE -> bool/true/false
-     - General cleanup and simplification
+     - License changed from Apache v2.0 to dual-license GNUv2/Commercial.
+     - Mutex priority promotion/demotion propagation fully implemented.
+     - Addition of deferred action function support to allow moving
+       TPortal functions to pmode.
 
 
      Configuration and Reference

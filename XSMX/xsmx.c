@@ -1,22 +1,26 @@
 /*
-* xsmx.c                                                    Version 5.4.0
+* xsmx.c                                                    Version 6.0.0
 *
 * smx internal subroutines.
 *
-* Copyright (c) 2001-2025 Micro Digital Inc.
+* Copyright (c) 2001-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -222,13 +226,17 @@ void smx_DQRQTask(TCB_PTR t)
 *  Alter the tq field only if RQ, XCB, or EVCB.
 *  Clears task->sv. This function is called by functions such as smx_TaskStop(),
 *  smx_TaskStart(), smx_TaskResume(), which can operate on a task waiting
-*  anywhere, such as an event queue or a pipe, so we need to clear sv.
+*  anywhere, such as an event queue or a pipe, so we need to clear sv. If task
+*  is in a mutex queue, mutex owner is demoted if task promoted it, and priority
+*  change is propagated, if necessary. 
 *
 *  Note: Do not use this to dequeue and requeue a task. Instead call
 *        smx_TaskRequeue().
 */
 void smx_DQTask(TCB_PTR t)
 {
+   CB_PTR q = t->bl; /* save t->bl before t is dequeued */
+
    if (t->flags.in_eq == 1)
    {
       if (((TCB_PTR)t->fl)->cbtype == SMX_CB_TASK)
@@ -262,6 +270,32 @@ void smx_DQTask(TCB_PTR t)
    t->state = SMX_TASK_WAIT;
    t->sv = 0;
    t->fl = NULL;
+
+   /* if t is first in a mutex queue it may have promoted mutex owner */
+   if (q->cbtype == SMX_CB_MTX)
+   {
+      MUCB_PTR mtx = (MUCB_PTR)q;
+      TCB_PTR  onr = mtx->onr;
+      u32     ppri = onr->pri;
+
+      /* reduce onr priority */
+      TCB_PTR nxt = (TCB_PTR)(mtx->fl);
+      if (mtx->pi && nxt != NULL && nxt->cbtype == SMX_CB_TASK)
+      {
+         /* onr->pri = greater of: nxt->pri, mtx->ceil, or onr->prinorm */
+         onr->pri = (nxt->pri > onr->prinorm ? nxt->pri : onr->prinorm);
+         onr->pri = (mtx->ceil > onr->pri ? mtx->ceil : onr->pri);
+      }
+      else
+      {
+         /* onr->pri = greater of mtx->ceil or onr->prinorm */
+         onr->pri = (mtx->ceil > onr->prinorm ? mtx->ceil : onr->prinorm);
+      }
+
+      /* requeue onr, if necessary */
+      if (onr->fl != NULL && onr->pri != ppri)
+         smx_ReQTask(onr);
+   }
 }
 
 /*
@@ -375,7 +409,7 @@ void smx_NQTimer(TMRCB_PTR tmr, u32 delay)
 *  Enqueues task t in queue q, by priority -- highest first. Does a simple
 *  linear search of q. Assumes valid q and t. If q is broken, reports
 *  SMXE_BROKEN_Q and enqueues t before the break as the last task. Sets in_prq
-*  flag in TCB for t.
+*  flag in TCB for t. If q is a mutex, adjusts owner priority.
 */
 void smx_PNQTask(CB_PTR q, TCB_PTR t, u32 cb)
 {
@@ -420,28 +454,29 @@ void smx_PNQTask(CB_PTR q, TCB_PTR t, u32 cb)
       }
    }
    t->flags.in_prq = 1;
+
+   /* adjust onr priority, if q is a mutex */
+   if (q->cbtype == SMX_CB_MTX)
+      smx_MutexOnrPriAdj((MUCB_PTR)q);
 }
 
 /*
 *  smx_ReQTask()
 *
-*  Requeues task due to a priority change.
+*  Requeues task due to a priority change. If in rq adjusts rqtop and sets
+*  sched to test if top task. If in mutex queue, adjusts owner priority and
+*  propagates priority change, if necessary.
 */
 bool smx_ReQTask(TCB_PTR t)
 {
-   MUCB_PTR  mtx; /* mutex */
-   TCB_PTR   nxt; /* next task */
-   CB_PTR      q; /* queue head found by search */
-
-   /* abort if task is not in a queue */
-   if (t->fl == 0)
-      return false;
+   TCB_PTR   nxt;    /* next task */
+   CB_PTR      q;    /* queue head found by search */
 
    /* find queue head. stop if come back to task */
    for (q = (CB_PTR)t->fl; (q != (CB_PTR)t) && (q->cbtype == SMX_CB_TASK);
         q = (CB_PTR)q->fl){}
 
-   /* abort if queue is broken */
+   /* abort if q is not a valid QCB */
    if (!smx_TEST_BRKNQ(q))
       smx_ERROR_RET(SMXE_BROKEN_Q, false, 0);
 
@@ -453,32 +488,37 @@ bool smx_ReQTask(TCB_PTR t)
       /* enqueue task at new level and adjust rqtop, if necessary <2> */
       smx_NQRQTask(t);
 
-      /* preempt if task is now top task */
+      /* test if task is now top task */
       smx_DO_CTTEST();
    }
    else if (t->flags.in_prq) /* task is in a priority queue <3> */
    {
-      /* try for higher postion */
+      /* find new position for t */
       nxt = (TCB_PTR)t->bl;
       if ((nxt->cbtype == SMX_CB_TASK) && (t->pri > nxt->pri))
       {
+         /* move up */
          while ((nxt->cbtype == SMX_CB_TASK) && (t->pri > nxt->pri))
             nxt = (TCB_PTR)nxt->bl;
+         /* abort if nxt is not a TCB or a QCB */
          if ((nxt->cbtype != SMX_CB_TASK) && (nxt->cbtype != q->cbtype))
             smx_ERROR_RET(SMXE_BROKEN_Q, false, 0);
       }
       else
       {
-         /* try for lower position */
          nxt = (TCB_PTR)t->fl;
-         while ((nxt->cbtype == SMX_CB_TASK) && (t->pri <= nxt->pri))
-            nxt = (TCB_PTR)nxt->fl;
+         if (nxt->cbtype == SMX_CB_TASK)
+         {
+            /* move down */
+            while ((nxt->cbtype == SMX_CB_TASK) && (t->pri <= nxt->pri))
+               nxt = (TCB_PTR)nxt->fl;
+         }
 
-         /* back up one postion <5> */
+         /* back up one position */
          nxt = (TCB_PTR)nxt->bl;
       }
 
-      /* move task, if necessary */
+      /* move t to new position, if necessary */
       if ((nxt->fl != (CB_PTR)t) && (nxt != t))
       {
          /* dequeue task */
@@ -492,17 +532,9 @@ bool smx_ReQTask(TCB_PTR t)
          nxt->fl     = (CB_PTR)t;
       }
 
-      /* promote mutex owner priority and requeue it, if inheritance is
-         enabled and new_priority is higher */
-      if (t->bl->cbtype == SMX_CB_MTX) /* task must be first in mutex wait queue */
-      {
-         mtx = (MUCB_PTR)t->bl;
-         if (mtx->pi && (mtx->onr->pri < t->pri))
-         {
-            mtx->onr->pri = t->pri;
-            smx_ReQTask(mtx->onr);  /* recursion <4> */
-         }
-      }
+      /* adjust onr priority, if q is a mutex */
+      if (q->cbtype == SMX_CB_MTX)
+         smx_MutexOnrPriAdj((MUCB_PTR)q);
    }
    return true;
 }
@@ -856,6 +888,34 @@ void smx_ErrorLQOvf(void)
    smx_ERROR(SMXE_LQ_OVFL, 0);
 }
 
+/*
+*  smx_MutexOnrPriAdj()
+*
+*  Adjust mutex owner priority if mtx->pi, and propagate priority change
+*  if mtx->fl != NULL.
+*/
+void smx_MutexOnrPriAdj(MUCB_PTR mtx)
+{
+   TCB_PTR tt  = mtx->fl;  /* top task in mutex queue */
+   TCB_PTR onr = mtx->onr; /* mutex owner */
+
+   if (mtx->pi) /*<8>*/
+   {
+      if (onr->pri < tt->pri)
+      {
+         onr->pri = tt->pri;
+      }
+      else if (onr->pri > tt->pri)
+      {
+         /* onr->pri = greater of: tt->pri, mtx->ceil, or onr->prinorm */
+         onr->pri = (tt->pri > onr->prinorm ? tt->pri : onr->prinorm);
+         onr->pri = (mtx->ceil > onr->pri ? mtx->ceil : onr->pri);
+      }
+      if (onr->fl != 0)
+         smx_ReQTask(onr);  /* propagate priority change <4> */
+   }
+}
+
 /* This can be used anywhere a nop function is required. */
 void smx_NullF(void)
 {
@@ -918,14 +978,47 @@ void  smx_RelPoolStack(TCB_PTR task)
    #endif
 }
 
+/* smx_TaskPriAdj(task)
+*
+*  If task owns other mutexes, set its priority to the highest priority of:
+*  the highest priority waiting task or mutex ceiling in its mutex-owned
+*  list or to its normal priority.
+*/
+void smx_TaskPriAdj(TCB_PTR task)
+{
+   u8       np;   /* new priority */
+   MUCB_PTR nxm;  /* next mutex */
+
+   np = task->prinorm;
+
+   if (task->molp != NULL)
+   {
+      /* Set np at highest mutex ceiling or waiting task priority */
+      for (nxm = task->molp; nxm != NULL; nxm = nxm->molp)
+      {
+         if (nxm->ceil > np)
+            np = nxm->ceil;
+         if (nxm->pi && (nxm->fl != NULL) && (((TCB_PTR)nxm->fl)->pri > np))
+            np = ((TCB_PTR)nxm->fl)->pri;
+      }
+   }
+   /* requeue task if necessary */
+   if (task->pri != np)
+   {
+      task->pri = np;
+      if (task->fl != NULL)
+         smx_ReQTask(task);
+   }
+}
+
 /* Notes:
    1. To ensure that smx_ct is stopped for Stop SSRs if the CB test fails and
       the SSR is aborted.
    2. "Down" means lower priority (--> higher address). "Up" means higher
       priority (--> lower address).
    3. Do not requeue task if it is in a FIFO queue.
-   4. This handles priority propagation for mutexes. However, it is recursive. 
-      It may be desirable to limit the recursion.
+   4. This handles priority propagation for mutexes. However, it is recursive, 
+      so it may be desirable to limit the recursion.
    5. Broken queue in the forward direction has already been tested.
    6. It is possible that a timer may be stopped before srnest is set > 0, and
       that a preempting task will take TMRCB for its own use. Hence, it is
@@ -933,4 +1026,6 @@ void  smx_RelPoolStack(TCB_PTR task)
       it is not possible to set tmr->tmhp to point to tmr.
    7. If not, there is no reason to change the xchg owner's priority because it
       is >= the first msg priority.
+   8. The first task in a mutex wait queue has the highest priority and is 
+      called the top task.
 */

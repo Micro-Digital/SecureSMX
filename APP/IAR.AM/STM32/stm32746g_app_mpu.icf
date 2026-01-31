@@ -1,12 +1,12 @@
 //****************************************************************************
-// stm32746g_app_mpu.icf                                    Version 5.4.0
+// stm32746g_app_mpu.icf                                    Version 6.0.0
 //
 // ILINK linker command file for STMicro STM32746G-EVAL and STM32746G-DISCOVERY
 // boards and SecureSMX (MPU).
 //
 // Internal ROM Internal RAM Version for SecureSMX with MPU
 //
-// Copyright (c) 2015-2025 Micro Digital Inc.
+// Copyright (c) 2015-2026 Micro Digital Inc.
 // All rights reserved. www.smxrtos.com
 //
 // Memory Layout:
@@ -52,7 +52,7 @@ define exported symbol fpucsz    = 0x800;    /* FPU demo */
 define exported symbol fpudsz    = 0x400;
 define exported symbol fscsz     = 0x8000;   /* file system */
 define exported symbol fsdsz     = 0x8000;
-define exported symbol fpdcsz    = 0x800;    /* file portal demo */
+define exported symbol fpdcsz    = 0x1000;   /* file portal demo */
 define exported symbol fpddsz    = 0x8000;
 define exported symbol lcdcsz    = 0x4000;   /* LCD demo */
 define exported symbol lcddsz    = 0x200;
@@ -61,7 +61,7 @@ define exported symbol leddsz    = 0x0;
 define exported symbol scsz      = 0x20000;  /* system */
 define exported symbol sdsz      = 0x20000;
 define exported symbol ucomcsz   = 0x4000;   /* umode common */
-define exported symbol ucomdsz   = 0x100;
+define exported symbol ucomdsz   = 0x200;
 
 /* plug block sizes <4> */
 define exported symbol pb1csz    = 0x3C00;   /* plug block <4a> */
@@ -88,7 +88,7 @@ define block cp_data with size = cpdsz*6/8, alignment = cpdsz
 define block ucom_code with fixed order, size = ucomcsz*5/8, alignment = ucomcsz
                 {ro section .ucom.reset, ro section .ucom.text, ro section .ucom.rodata, /*<3>*/
                  ro section .svc.text, ro section .svc.rodata, block clib_code};
-define block ucom_data with fixed order, size = ucomdsz*8/8, alignment = ucomdsz
+define block ucom_data with fixed order, size = ucomdsz*5/8, alignment = ucomdsz
                 {rw section .ucom.bss, rw section .ucom.data, rw section .ucom.noinit,
                  rw section .svc.bss, rw section .svc.data, rw section .svc.noinit,
                  block clib_data};
@@ -111,7 +111,7 @@ define block fpu_code with size = fpucsz*6/8,  alignment = fpucsz
                 {ro section .fpu.text,   ro section .fpu.rodata};
 define block fpu_data with size = fpudsz *7/8, alignment = fpudsz   
                 {rw section .fpu.bss,    rw section .fpu.data, rw section .fpu.noinit};
-define block fpd_code with fixed order, size = fpdcsz*7/8, alignment = fpdcsz    
+define block fpd_code with fixed order, size = fpdcsz*5/8, alignment = fpdcsz    
                 {ro section .fpd.reset, ro section .fpd.text, ro section .fpd.rodata};
 define block fpd_data with size = fpddsz*5/8, alignment = fpddsz    
                 {rw section .fpd.bss, rw section .fpd.data,rw section .fpd.noinit};

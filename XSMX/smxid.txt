@@ -1,4 +1,4 @@
-smx v5.4.0
+smx v6.0.0
 ----------
 
 This file documents the version of smx and tools supported by this
@@ -14,17 +14,3 @@ ARM IAR Embedded Workbench (IAR.AM, IAR.ARM):
 
 Please see the section for your compiler in the SMX Target Guide
 for the most up to date tool installation information.
-
-----------
-
-This software, documentation, and accompanying materials are made available
-under the Apache License, Version 2.0. You may not use this file except in
-compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
-
-SPDX-License-Identifier: Apache-2.0
-
-This Work is protected by patents listed in smx.h. A patent license is
-granted according to the License above. This entire comment block must be
-preserved in all copies of this file.
-
-Support services are offered by MDI. Inquire at support@smxrtos.com.

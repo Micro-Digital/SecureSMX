@@ -1,23 +1,27 @@
 ;
-; xarmm_iar.inc  (IAR version)                              Version 5.4.0
+; xarmm_iar.inc  (IAR version)                              Version 6.0.0
 ;
 ; smx Definitions, Globals, and Macros for ARM-M assembly files.
 ; Minimal subset of the definitions in C header files.
 ;
-; Copyright (c) 1998-2025 Micro Digital Inc.
+; Copyright (c) 1998-2026 Micro Digital Inc.
 ; All rights reserved. www.smxrtos.com
 ;
+; SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+;
 ; This software, documentation, and accompanying materials are made available
-; under the Apache License, Version 2.0. You may not use this file except in
-; compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+; under a dual license, either GPLv2 or Commercial. You may not use this file
+; except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+; It does not permit the incorporation of this code into proprietary programs.
 ;
-; SPDX-License-Identifier: Apache-2.0
+; Commercial license and support services are available from Micro Digital.
+; Inquire at support@smxrtos.com.
 ;
-; This Work is protected by patents listed in smx.h. A patent license is
-; granted according to the License above. This entire comment block must be
-; preserved in all copies of this file.
+; This Work embodies patents listed in smx.h. A patent license is hereby
+; granted to use these patents in this Work and Derivative Works, except in
+; another RTOS or OS.
 ;
-; Support services are offered by MDI. Inquire at support@smxrtos.com.
+; This entire comment block must be preserved in all copies of this file.
 ;
 ; Author: David Moore
 ;
@@ -26,7 +30,7 @@
 #include "barmm_iar.inc"
 
 SMX                     EQU   1
-SMX_VERSION             EQU   0x0540  ; Change xdef.h and string in scheduler too.
+SMX_VERSION             EQU   0x0600  ; Change xdef.h and string in scheduler too.
 
 ;============================================================================;
 ;                             SMX CONFIGURATION                              ;
@@ -38,6 +42,7 @@ SB_CFG_TM               EQU   1
 SMX_CFG_DIAG            EQU   1
 SMX_CFG_EVB             EQU   1
 SMX_CFG_PROFILE         EQU   1
+
 SMX_CFG_SSMX            EQU   1
 
 #if SMX_CFG_SSMX
@@ -72,8 +77,14 @@ SMX_TCB_OFFS_RV         EQU   44
 SMX_TCB_OFFS_FUN        EQU   56
 SMX_TCB_OFFS_THISPTR    EQU   68
 SMX_TCB_OFFS_SUSPLOC    EQU   76
+SMX_TCB_OFFS_DAF        EQU   120
+
 SMX_TCB_FLAGS_RV_R0     EQU   0x00000100
 SMX_TCB_FLAGS_UMODE     EQU   0x00010000
+SMX_TCB_FLAGS_G4PAR     EQU   0x00040000
+SMX_TCB_FLAGS_DA_ENTER  EQU   0x00080000
+SMX_TCB_FLAGS_DA_RUN    EQU   0x00100000
+SMX_TCB_FLAGS_DA_EXIT   EQU   0x00200000
 
 ; Errors
 SMXE_PRIV_VIOL          EQU   2

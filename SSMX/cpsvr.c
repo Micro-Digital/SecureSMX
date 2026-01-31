@@ -1,22 +1,26 @@
 /*
-* cpsvr.c                                                   Version 5.4.0
+* cpsvr.c                                                   Version 6.0.0
 *
 * Console Portal Server Code.
 *
-* Copyright (c) 2019-2025 Micro Digital Inc.
+* Copyright (c) 2019-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -157,11 +161,11 @@ void cp_main(u32)
 void cp_server(FPSS* psh)
 {
    CPSH* shp;  /* service header pointer */
-   MCB*  pmsg = NULL;
+   MCB*  pmsg;
    u32   p1, p2, p3, p4, p5;
    bool  ret;
 
-   while (pmsg = smx_PMsgReceive(psh->sxchg, (u8**)&shp, psh->ssn, SMX_TMO_INF, &pmsg))
+   while (pmsg = smx_PMsgReceive(psh->sxchg, (u8**)&shp, psh->ssn, SMX_TMO_INF, NULL))
    {
       switch (shp->fid)
       {

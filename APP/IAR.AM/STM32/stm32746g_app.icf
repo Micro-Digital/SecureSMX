@@ -1,12 +1,12 @@
 //****************************************************************************
-// stm32746g_app.icf                                        Version 5.4.0
+// stm32746g_app.icf                                        Version 6.0.0
 //
 // ILINK linker command file for STMicro STM32746G-EVAL and STM32746G-DISCOVERY
 // boards and SMX (no MPU).
 //
 // Internal ROM Internal RAM Version (ROM build targets)
 //
-// Copyright (c) 2015-2025 Micro Digital Inc.
+// Copyright (c) 2015-2026 Micro Digital Inc.
 // All rights reserved. www.smxrtos.com
 //
 // Memory Layout:

@@ -1,22 +1,26 @@
 /*
-* xmtx.c                                                    Version 5.4.0
+* xmtx.c                                                    Version 6.0.0
 *
 * smx Mutex Functions
 *
-* Copyright (c) 2004-2025 Micro Digital Inc.
+* Copyright (c) 2004-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -28,7 +32,6 @@
 /* smx_MutexGetFast() and smx_MutexRelFast() in xsmx.h since shared */
 static bool smx_MutexGet_F(MUCB_PTR mtx, u32 timeout);
 static void smx_MutexRemFromMOL(MUCB_PTR mtx, TCB_PTR task);
-static void smx_PriReduce(TCB_PTR task);
 
 /*
 *  smx_MutexClear()   SSR
@@ -39,8 +42,6 @@ static void smx_PriReduce(TCB_PTR task);
 */
 bool smx_MutexClear(MUCB_PTR mtx)
 {
-   u8       np;
-   MUCB_PTR nxm;
    bool     pass;
    TCB_PTR  task;
 
@@ -52,42 +53,22 @@ bool smx_MutexClear(MUCB_PTR mtx)
    {
       task = mtx->onr;
 
+      /* free mutex and adjust owner priority */
       if (task != NULL)
       {
          smx_MutexRemFromMOL(mtx, task);
-
          if (task->pri != task->prinorm)
-         {
-            if (task->molp == NULL)  /* Restore normal priority */
-               np = task->prinorm;
-            else /* Set ct->pri to highest mutex ceiling or waiting task priority */
-            {
-               np = task->prinorm;
-               for (nxm = task->molp; nxm != NULL; nxm = nxm->molp)
-               {
-                  if (nxm->ceil > np)
-                     np = nxm->ceil;
-                  if (nxm->pi && (nxm->fl != NULL) && (((TCB_PTR)nxm->fl)->pri > np))
-                     np = ((TCB_PTR)nxm->fl)->pri;
-               }
-            }
-            /* If ct->pri changes, requeue task and enable preemption */
-            if (task->pri != np)
-            {
-               task->pri = np;
-               smx_ReQTask(task);
-            }
-         }
+            smx_TaskPriAdj(task);
+         mtx->ncnt = 0;
+         mtx->onr  = NULL;
       }
-      mtx->ncnt = 0;                        /* Clear nesting count. */
-      mtx->onr  = NULL;                     /* Free mutex. */
 
-      /* Empty task wait queue. */
+      /* empty task wait queue */
       while (mtx->fl != NULL)
       {
          if (mtx->fl >= (TCB_PTR)smx_tcbs.pi && mtx->fl <= (TCB_PTR)smx_tcbs.px)
          {
-            task = (TCB_PTR)mtx->fl;        /* Get next task. */
+            task = (TCB_PTR)mtx->fl;            /* Get next task. */
 
             /* Dequeue task from task wait queue. */
             if (task->fl == (CB_PTR)mtx)
@@ -95,7 +76,6 @@ bool smx_MutexClear(MUCB_PTR mtx)
             else
                mtx->fl = (TCB_PTR)task->fl;
 
-            task->fl = NULL;
             task->flags.in_prq = 0;
             task->flags.mtx_wait = 0;           /* Reset task's mutex wait flag. */
             smx_NQRQTask(task);                 /* Enqueue task into rq. */
@@ -179,8 +159,6 @@ bool smx_MutexDelete(MUCB_PTR* muhp)
 */
 bool smx_MutexFree(MUCB_PTR mtx)
 {
-   u8       np;
-   MUCB_PTR nxm;
    bool     pass;
    TCB_PTR  task;
 
@@ -195,36 +173,10 @@ bool smx_MutexFree(MUCB_PTR mtx)
       if (task != NULL)
       {
          smx_MutexRemFromMOL(mtx, task);
-
          if (task->pri != task->prinorm)
-         {
-            if (task->molp == NULL)  /* Restore normal priority */
-               np = task->prinorm;
-            else /* Set ct->pri to highest mutex ceiling or waiting task priority */
-            {
-               np = task->prinorm;
-               for (nxm = task->molp; nxm != NULL; nxm = nxm->molp)
-               {
-                  if (nxm->ceil > np)
-                     np = nxm->ceil;
-                  if (nxm->pi && (nxm->fl != NULL) && (((TCB_PTR)nxm->fl)->pri > np))
-                     np = ((TCB_PTR)nxm->fl)->pri;
-               }
-            }
-            /* If ct->pri changes, requeue task and enable preemption */
-            if (task->pri != np)
-            {
-               task->pri = np;
-               smx_ReQTask(task);
-            }
-         }
+            smx_TaskPriAdj(task);
 
-         if (mtx->fl == NULL)
-         {                                   /* Task queue is empty: */
-            mtx->ncnt = 0;                   /* Clear nesting count. */
-            mtx->onr  = NULL;                /* Free mutex. */
-         }
-         else
+         if (mtx->fl != NULL)
          {                                   /* Task queue is not empty: */
             task = (TCB_PTR)mtx->fl;         /* Get next task. */
             mtx->onr = task;                 /* Give the mutex to the task. */
@@ -248,12 +200,17 @@ bool smx_MutexFree(MUCB_PTR mtx)
                task->pri = mtx->ceil;
 
             task->flags.in_prq = 0;
-            task->flags.mtx_wait = 0;           /* Reset task's mutex wait flag. */
-            smx_NQRQTask(task);                 /* Enqueue task into rq. */
-            smx_DO_CTTEST();                    /* Possible preemption. */
+            task->flags.mtx_wait = 0;        /* Reset task's mutex wait flag. */
+            smx_NQRQTask(task);              /* Enqueue task into rq. */
+            smx_DO_CTTEST();                 /* Possible preemption. */
             smx_timeout[task->indx] = SMX_TMO_INF; /* Reset task timer. */
-            task->rv = true;                    /* Prior smx_MutexGet from task has succeeded. */
+            task->rv = true;                 /* Prior smx_MutexGet from task has succeeded. */
             smx_PUT_RV_IN_EXR0(task)
+         }
+         else
+         {                                   /* Task queue is empty: */
+            mtx->ncnt = 0;                   /* Clear nesting count. */
+            mtx->onr  = NULL;                /* Free mutex. */
          }
       }
    }
@@ -373,7 +330,7 @@ bool smx_MutexRel(MUCB_PTR mtx)
    /* verify that mutex is valid and that current task has access permission */
    if (pass = smx_MUCBTest(mtx, SMX_PRIV_LO))
    {
-      if (mtx->onr != task)
+      if (mtx->onr != smx_ct)
       {
          if (mtx->onr == NULL)
          {
@@ -392,7 +349,7 @@ bool smx_MutexRel(MUCB_PTR mtx)
 
             /* reduce task priority if it was promoted */
             if (task->pri != task->prinorm)
-               smx_PriReduce(task);
+               smx_TaskPriAdj(task);
 
             if (mtx->fl != NULL)             /* If mutex task queue is not empty: */
             {
@@ -400,7 +357,7 @@ bool smx_MutexRel(MUCB_PTR mtx)
                mtx->onr = nxt;               /* Give the mutex to nxt. */
                mtx->ncnt = 1;                /* Set nesting count = 1. */
 
-               if (nxt->fl == (CB_PTR)mtx)    /* Dequeue nxt from mutex wait list. <3> */
+               if (nxt->fl == (CB_PTR)mtx)   /* Dequeue nxt from mutex wait list. <3> */
                   mtx->fl = NULL;
                else
                {
@@ -418,11 +375,11 @@ bool smx_MutexRel(MUCB_PTR mtx)
                   nxt->pri = mtx->ceil;
 
                nxt->flags.in_prq = 0;
-               nxt->flags.mtx_wait = 0;            /* Reset task's mutex wait flag. */
-               smx_NQRQTask(nxt);                  /* Enqueue nxt into rq. */
-               smx_DO_CTTEST();                    /* Possible preemption. */
-               smx_timeout[nxt->indx] = SMX_TMO_INF; /* Reset nxt timeout timer. */
-               nxt->rv = true;                     /* Prior smx_MutexGet from nxt has succeeded. */
+               nxt->flags.mtx_wait = 0;               /* Reset task's mutex wait flag. */
+               smx_NQRQTask(nxt);                     /* Enqueue nxt into rq. */
+               smx_DO_CTTEST();                       /* Possible preemption. */
+               smx_timeout[nxt->indx] = SMX_TMO_INF;  /* Reset nxt timeout timer. */
+               nxt->rv = true;                        /* Prior smx_MutexGet from nxt has succeeded. */
                smx_PUT_RV_IN_EXR0(nxt)
             }
             else
@@ -502,7 +459,7 @@ bool smx_MutexGet_F(MUCB_PTR mtx, u32 timeout)
          {
             ct->pri = mtx->ceil;
 
-            /* remove ct from rq. ct is re-queued and smx_rqtop is adjusted below */
+            /* remove ct from rq */
             if (ct->fl == ct->bl)
             {
                ct->fl->fl = NULL;
@@ -514,7 +471,7 @@ bool smx_MutexGet_F(MUCB_PTR mtx, u32 timeout)
                ct->bl->fl = ct->fl;
             }
 
-            /* Move ct to higher priority in rq. */
+            /* move ct to higher priority in rq and adjust rqtop */
             q = smx_rq + ct->pri;
             smx_NQTask((CB_PTR)q, ct);
             q->tq = 1;
@@ -538,10 +495,11 @@ bool smx_MutexGet_F(MUCB_PTR mtx, u32 timeout)
                ct->flags.mtx_wait = 1;
 
                /* priority promotion, if necessary */
-               if ((mtx->pi != 0) && (ct->pri > mtx->onr->pri))
+               if (mtx->pi && (ct->pri > mtx->onr->pri))
                {
                   mtx->onr->pri = ct->pri;
-                  smx_ReQTask(mtx->onr);
+                  if (mtx->onr->fl != NULL)
+                     smx_ReQTask(mtx->onr);
                }
                smx_TimeoutSet(ct, timeout);
                smx_sched = SMX_CT_SUSP;
@@ -597,11 +555,8 @@ bool smx_MutexGetFast(MUCB_PTR mtx, u32 timeout)
             smx_sched = SMX_CT_SUSP;
 
             /* if enabled, promote priority of mtx->onr */
-            if ((mtx->pi != 0) && (ct->pri > mtx->onr->pri))
-            {
+            if (mtx->pi && (ct->pri > mtx->onr->pri))
                mtx->onr->pri = ct->pri;
-               smx_ReQTask(mtx->onr);
-            }
          }
          pass = false;
       }
@@ -617,6 +572,7 @@ bool smx_MutexGetFast(MUCB_PTR mtx, u32 timeout)
 *  SMX_HEAP_RETRY for svc heap functions to indicate that function recall is
 *  necessary.
 */
+
 void smx_MutexRelFast(MUCB_PTR mtx)
 {
    TCB_PTR  nxt;  /* next task */
@@ -628,7 +584,7 @@ void smx_MutexRelFast(MUCB_PTR mtx)
 
    /* reduce smx_ct priority if it was promoted */
    if (smx_ct->pri != smx_ct->prinorm)
-      smx_PriReduce(smx_ct);
+      smx_TaskPriAdj(smx_ct);
 
    if (mtx->fl != NULL)
    {
@@ -694,57 +650,6 @@ void smx_MutexRemFromMOL(MUCB_PTR mtx, TCB_PTR task)
       }
    }
    mtx->molp = NULL; /* <5> */
-}
-
-/* If task owns other mutexes, set its priority to the highest mutex ceiling 
-   or waiting task priority, else to its the normal priority and requeue task 
-   in rq, adjust rqtop, and invoke scheduler. 
-*/
-void smx_PriReduce(TCB_PTR task)
-{
-   u8       np;   /* new priority */
-   MUCB_PTR nxm;  /* next mutex */
-   RQCB_PTR nrq;  /* new rq level */
-
-   np = task->prinorm;
-
-   if (task->molp != NULL)
-   {
-    /* Set np at highest mutex ceiling or waiting task priority */
-      for (nxm = task->molp; nxm != NULL; nxm = nxm->molp)
-      {
-         if (nxm->ceil > np)
-            np = nxm->ceil;
-         if (nxm->pi && (nxm->fl != NULL) && (((TCB_PTR)nxm->fl)->pri > np))
-            np = ((TCB_PTR)nxm->fl)->pri;
-      }
-   }
-   /* set task priority to np */
-   task->pri = np;
-
-   /* dequeue task from rq */
-   if (task->fl == task->bl)
-   {
-      task->fl->fl = NULL;
-      ((RQCB_PTR)(task->fl))->tq = 0;
-   }
-   else
-   {
-      task->fl->bl = task->bl;
-      task->bl->fl = task->fl;
-   }
-
-   /* requeue task in rq */
-   nrq = smx_rq + task->pri;
-   smx_NQTask((CB_PTR)nrq, task);
-   nrq->tq = 1;
-
-   /* if the rqtop rq level is empty, adjust rqtop to the next lower-priority 
-      level that is occupied */
-   while ((smx_rqtop->tq == 0) && (smx_rqtop > smx_rq))
-      smx_rqtop--;
-
-   smx_DO_CTTEST();  /* invoke task scheduler */
 }
 
 /* Notes:

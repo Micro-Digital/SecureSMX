@@ -1,22 +1,26 @@
 /*
-* xpmsg.c                                                   Version 5.4.0
+* xpmsg.c                                                   Version 6.0.0
 *
 * smx Protected Message Functions
 *
-* Copyright (c) 2018-2025 Micro Digital Inc.
+* Copyright (c) 2018-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: Ralph Moore
 *
@@ -373,9 +377,20 @@ MCB_PTR smx_PMsgReceive(XCB_PTR xchg, u8** bpp, u8 dsn, u32 timeout, MCB_PTR* mh
             pmsg->con.hsn = rsn;
          else
             pmsg->con.osn = rsn;
+               
+         /* if pmsg is a free portal message, load pmsg into its FPCS */
+         FPCS* pch = (FPCS*)pmsg->fpcsh;
+         if (pch)
+            pch->pmsg = pmsg;
       }
       else
+      {
          smx_ct->dsn = dsn; /* save dual slot number in smx_ct */
+
+         /* initialize xchg for next request */
+         xchg->onr = NULL;
+         xchg->bct = NULL;
+      }
    }
    return((MCB_PTR)smx_SSRExit((u32)pmsg, SMX_ID_PMSG_RECEIVE));
 }
@@ -518,7 +533,7 @@ bool smx_PMsgRel(MCB_PTR* pmsgp, u16 clrsz)
             #endif
          }
       }
-      /* clear pmsg owner's MPA and MPU slots, release pmsg and clear its handle  */
+      /* clear pmsg owner's MPA and MPU slots, release pmsg, and clear its handle */
       smx_PBlockRelSlot(osn);
       pass = smx_MsgRel_F(pmsg, clrsz);
       *pmsgp = NULL;
@@ -628,7 +643,7 @@ bool smx_PMsgSend(MCB_PTR pmsg, XCB_PTR xchg, u8 pri, void* reply)
                *++mp = 0;
               #endif
             }
-            if (rtask != NULL)
+            if (rtask != NULL)  /* rtask gets pmsg */
             {
                /* determine receiver slot number <4> */
                #if SB_CPU_ARMM7
@@ -650,8 +665,13 @@ bool smx_PMsgSend(MCB_PTR pmsg, XCB_PTR xchg, u8 pri, void* reply)
                /* Load pmsg region into MPA[rsn] for rtask */
                smx_PMsgLoadMPA(pmsg, rtask, rsn);
             }
-            else
+            else  /* pmsg enqueued at xchg */
+            {
                pmsg->host = NULL; /*<5>*/
+
+               if (pmsg->con.bnd && xchg->flags.pi) /*<7>*/
+                  pmsg->onr->pri = xchg->onr->pri;
+            }
          }
       }
    }
@@ -733,6 +753,8 @@ u32 smx_PMsgLoadMPA(MCB* pmsg, TCB* rtask, u8 sn)
       the host.
    6. If pmsg is not bound to the sender, the host becomes the owner. Otherwise
       the sender remains the owner.
+   7. If priority promotion is enabled for a tunnel portal, this ensures that
+      client priority is the same as server priority if the latter is promoted.
 */
 
 #endif /* SMX_CFG_SSMX */

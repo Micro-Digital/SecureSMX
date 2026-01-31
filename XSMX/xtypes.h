@@ -1,22 +1,26 @@
 /*
-* xtypes.h                                                  Version 5.4.0
+* xtypes.h                                                  Version 6.0.0
 *
 * smx Data Types
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -162,6 +166,7 @@ typedef struct MCB {       /* MESSAGE CONTROL BLOCK */
       u16      sb  : 1;          /* system block. pmsg is in mheap */
    } con;
    TCB_PTR     host;          /* host */
+   u32         fpcsh;         /* free portal client structure handle */
 #endif
 } MCB, *MCB_PTR;
 
@@ -262,6 +267,10 @@ typedef struct TCB {       /* TASK CONTROL BLOCK */
       u32      tok_ok : 1;       /* token test passed */
       u32      umode : 1;        /* unprivileged mode <2> */
       u32      priv_fixed : 1;   /* task privilege is fixed */
+      u32      g4par : 1;        /* function has greater than 4 parameters */
+      u32      da_enter : 1;     /* deferred action function enter */
+      u32      da_run : 1;       /* deferred action function running */
+      u32      da_exit : 1;      /* deferred action function exit */
    } flags;
    u8*         spp;           /* +24 stack pad pointer */
    u8*         stp;           /* +28 stack top pointer -- last usable word */
@@ -297,7 +306,8 @@ typedef struct TCB {       /* TASK CONTROL BLOCK */
    u8          dsn;           /*     dual slot number (high nibble is aux slot) */
    u8          idle_ctr;      /*     counts idle passes per RTL frame */
    u8          pad2;
-   u32*        tap;           /*+116 token array pointer */ 
+   u32*        tap;           /*+116 token array pointer */
+   u32         daf;           /*+120 deferred action function */ 
   #endif
 
   #if defined(SMX_TXPORT)
@@ -338,10 +348,11 @@ typedef struct XCB {       /* EXCHANGE CONTROL BLOCK */
       u8       tq : 1;        /* task queue present */
       u8       pi : 1;        /* priority inheritance */
    } flags;
-   TCB_PTR     onr;           /* owner if pi */
+   TCB_PTR     onr;           /* owner if pi = true */
    CBF_PTR     cbfun;         /* callback function */
    const char* name;          /* name */
    XCB_PTR*    xhp;           /* exchange handle pointer */
+   TCB_PTR     bct;           /* bound client task if pi = true */
 } XCB, *XCB_PTR;
 
 

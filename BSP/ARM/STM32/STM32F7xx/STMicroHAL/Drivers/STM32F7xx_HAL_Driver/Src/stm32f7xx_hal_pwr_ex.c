@@ -146,6 +146,11 @@
   * @{
   */
 
+//MDI:RM: Added
+#if SMX_CFG_SSMX && !defined(SMX_DEBUG)
+#pragma default_function_attributes = @ ".pb1.text" /* put into pb1_code */
+#endif
+
 /**
   * @brief Enables the Backup Regulator.
   * @retval HAL status

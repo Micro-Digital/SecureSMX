@@ -1,11 +1,11 @@
 //****************************************************************************
-// lpc55s69evk_app_mpu.icf                                  Version 5.4.0
+// lpc55s69evk_app_mpu.icf                                  Version 6.0.0
 //
 // ILINK Command File for IAR EWARM, App, and NXP LPC55S69-EVK board.
 //
 // Internal ROM Internal SRAM Version (ROM build targets)
 //
-// Copyright (c) 2020-2025 Micro Digital Inc.
+// Copyright (c) 2020-2026 Micro Digital Inc.
 // All rights reserved. www.smxrtos.com
 //
 // Non-Secure Memory Layout:
@@ -46,7 +46,7 @@ define exported symbol fpucsz    = 0x800;
 define exported symbol fpudsz    = 0x320;
 define exported symbol ledcsz    = 0x100;
 define exported symbol opconcsz  = 0x120;
-define exported symbol scsz      = 0x16000;   /* sys */
+define exported symbol scsz      = 0x18000;   /* sys */
 define exported symbol sdsz      = 0xA980;
 define exported symbol ucomcsz   = 0x2A00;
 define exported symbol ucomdsz   = 0x600;

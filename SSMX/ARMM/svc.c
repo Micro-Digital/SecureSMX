@@ -1,25 +1,29 @@
 /*
-* svc.c                                                     Version 5.4.0
+* svc.c                                                     Version 6.0.0
 *
 * ARMM SVC system call shell functions. These are all system calls permitted
 * from umode. Some have built-in restrictions. For better security, all unused
 * service calls should be removed from this file. For even greater security,
 * a custom set of shell functions can be defined within a partition.
 *
-* Copyright (c) 2016-2025 Micro Digital Inc.
+* Copyright (c) 2016-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -69,7 +73,8 @@ enum ssndx {LIM, AS, ASL, BG, BM, BP, BR, BRA, BU, BPC, BPD, BPP,
             IRQC, IRQM, IRQU, PK, PTMG,
             MO, MPAC, MPACL, MPASM, 
            #if SMX_CFG_PORTAL
-            FPC, FPO, FPR, FPS, FTPS, POEM, POL, POR,
+            FPC, FPO, FPR, FPS, FTPS, POEM, POL, POR, TPC,
+            DTPO, DTPR, DTPS,
            #endif
            #if defined(MW_FATFS) && defined(SB_CPU_STM32)
             BSP_SDI,
@@ -234,6 +239,10 @@ u32 smx_sst[] = {
    (u32)mp_PortalEM,
    (u32)mp_PortalLog,
    (u32)mp_PortalRet,
+   (u32)mp_TPortalClose,
+   (u32)mp_SetDAF,
+   (u32)mp_SetDAF,
+   (u32)mp_SetDAF,
   #endif
   #if defined(MW_FATFS) && defined(SB_CPU_STM32)
    (u32)BSP_SD_Init,
@@ -979,7 +988,7 @@ NI bool mpu_FPortalClose(FPCS* pch, u8 xsn)
    sb_SVCH(FPC)
 }
 
-NI bool mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, 
+NI bool mpu_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg,
                                                 u32 tmo, const char* rxname)
 {
    sb_SVCHG4(FPO)
@@ -1014,6 +1023,28 @@ NI void mpu_PortalRet(u32 id, u32 rv)
 {
    sb_SVC(POR)
 }
+
+NI bool mpu_TPortalClose(TPCS* pch)
+{
+   sb_SVC(TPC)
+}
+
+NI bool mpu_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, 
+                                       const char* ssname, const char* csname)
+{
+   sb_SVCG4da(DTPO)
+}
+
+NI bool mpu_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
+{
+   sb_SVCda(DTPR)
+}
+
+NI bool mpu_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
+{
+   sb_SVCda(DTPS)
+}
+
 #endif /* SMX_CFG_PORTAL */
 
 #if defined(MW_FATFS) && defined(SB_CPU_STM32)
@@ -1026,6 +1057,25 @@ NI u8 sbu_BSP_SD_Init(void)
 NI void smxu_EM(SMX_ERRNO errno, u8 sev)
 {
    sb_SVC(EM)
+}
+
+/* set deferred action function */
+void mp_SetDAF(u32 n)
+{
+   switch (n)
+   {
+      case DTPO:
+         smx_ct->daf = (u32)&mp_TPortalOpen;
+         break;
+      case DTPR:
+         smx_ct->daf = (u32)&mp_TPortalReceive;
+         break;
+      case DTPS:
+         smx_ct->daf = (u32)&mp_TPortalSend;
+         break;
+   }
+   smx_ct->flags.da_enter = 1;
+   smx_PENDSVH();          /* trigger PSVH */
 }
 
 /* 

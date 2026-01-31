@@ -1,24 +1,28 @@
 /*
-* xdef.h                                                    Version 5.4.0
+* xdef.h                                                    Version 6.0.0
 *
 * smx constants, error numbers, and SSR IDs.
 *
 * This file defines general constants for use by all files.
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: Ralph Moore, David Moore
 *
@@ -32,7 +36,7 @@
 *===========================================================================*/
 
 #define  SMX                           /* used in eheap and third-party code */
-#define  SMX_VERSION       0x0540      /* change in xarmm_iar.inc <1> */
+#define  SMX_VERSION       0x0600      /* change in xarmm_iar.inc <1> */
 
 /* control block types */ 
 typedef enum {
@@ -68,8 +72,8 @@ typedef enum {
    SMX_CT_NOP,       /* no action */
    SMX_CT_TEST     = 0x20,       /* test ct */
    SMX_CT_SUSP     = 0x40,       /* suspend ct */
-   SMX_CT_STOP     = 0x80,       /* stop ct */
-   SMX_CT_DELETE   = 0x100,      /* delete ct */
+   SMX_CT_STOP     = 0x80,       /* stop ct <5> */
+   SMX_CT_DELETE   = 0x100,      /* delete ct <5> */
    SMX_CT_TOP      = 0x7FFFFFFF  /* force 32-bit enum */
 } SMX_SCHED;
 
@@ -561,5 +565,6 @@ typedef enum {
    3. Numbering of control block types is important for TEST macros. BQ marks 
       types tested by smx_TEST_BRKNQ().
    4. See Glossary in smx Reference Manual for more information on error types.
+   5. Must also change in xarmm_iar.inc.
 */
 #endif /* SMX_XDEF_H */

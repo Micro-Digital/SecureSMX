@@ -1,11 +1,11 @@
 //****************************************************************************
-// lpc55s69evk_app.icf                                      Version 5.4.0
+// lpc55s69evk_app.icf                                      Version 6.0.0
 //
 // ILINK Command File for IAR EWARM, App, and NXP LPC55S69-EVK board.
 //
 // Internal ROM Internal SRAM Version (ROM build targets)
 //
-// Copyright (c) 2020-2025 Micro Digital Inc.
+// Copyright (c) 2020-2026 Micro Digital Inc.
 // All rights reserved. www.smxrtos.com
 //
 // Memory Layout:

@@ -1,22 +1,26 @@
 /*
-* xmsg.c                                                    Version 5.4.0
+* xmsg.c                                                    Version 6.0.0
 *
 * smx Message and Exchange Functions
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: Ralph Moore, Alan Moore
 *
@@ -25,8 +29,11 @@
 #include "xsmx.h"
 
 /* internal subroutines */
-/* smx_MsgReceive_F(), smx_MsgRel_F(), smx_MsgRelAll_F() in xsmx.h since shared */
+static void smx_MsgPriorityPromotion(XCB_PTR xchg, MCB_PTR msg);
 static bool smx_MsgXchgClear_F(XCB_PTR xchg);
+
+/* shared subroutines -- see xsmx.h */
+/* smx_MsgReceive_F(), smx_MsgRel_F(), smx_MsgRelAll_F() */
 
 /*============================================================================
 *                             MESSAGE SERVICES                               *
@@ -80,26 +87,9 @@ bool smx_MsgBump(MCB_PTR msg, u8 pri)
          XCB_PTR xchg = (XCB_PTR)q;
          if (xchg->mode == SMX_XCHG_PASS)
          {
-            /* test for priority promotion if it is enabled */ 
+            /* possible msg priority promotion, if enabled */ 
             if (xchg->flags.pi == 1)
-            {
-               TCB_PTR onr = xchg->onr;
-               /* promote onr->pri if msg priority is higher */
-               if (onr != NULL && msg->pri > onr->pri)
-               {
-                  onr->pri     = msg->pri;
-                  onr->prinorm = msg->pri; /*<3>*/
-                  smx_ReQTask(onr);
-               }
-               else 
-               {
-                  /* promote onr->prinorm if msg priority is higher */
-                  if (onr != NULL && msg->pri > onr->prinorm)
-                  {
-                     onr->prinorm = msg->pri; /*<3>*/
-                  }
-               }     
-            }
+               smx_MsgPriorityPromotion(xchg, msg);
          }
       }
    }
@@ -110,7 +100,7 @@ bool smx_MsgBump(MCB_PTR msg, u8 pri)
 *  smx_MsgGet()   SSR
 *
 *  Gets block from block pool and loads msg block pointer into bpp. If bpp == 
-*  NULL, operation proceeds normally, bu no msg data ptr is returned.
+*  NULL, operation proceeds normally, but no msg data ptr is returned.
 *
 *  Notes:
 *     1. For proper operation there must be at least as many MCBs as there
@@ -388,6 +378,10 @@ u8* smx_MsgUnmake(MCB_PTR msg, u32* bsp)
       {
          *bsp = msg->bs;
       }
+
+      if (msg->fl) /* dequeue msg if it is in a queue */
+         smx_DQMsg(msg);
+
       /* release MCB to its pool and clear it and its handle */
       mhp = msg->mhp;
       sb_BlockRel(&smx_mcbs, (u8*)msg, sizeof(MCB));
@@ -519,10 +513,16 @@ bool smx_MsgSend(MCB_PTR msg, XCB_PTR xchg, u8 pri, void* reply)
          msg->priv = taskp->priv;
         #endif
 
-         /* clear msg handle */
          mhp = msg->mhp;
+        #if SMX_CFG_SSMX
+         /* clear msg handle if not bound to current task */
+         if (mhp && msg->con.bnd == 0)
+            *mhp = NULL;
+        #else
+         /* clear msg handle */
          if (mhp)
             *mhp = NULL;
+        #endif
 
          /* normal or pass exchange */
          if (xchg->mode != SMX_XCHG_BCST)
@@ -532,15 +532,22 @@ bool smx_MsgSend(MCB_PTR msg, XCB_PTR xchg, u8 pri, void* reply)
                /* give msg to first waiting task and resume task */
                task = smx_DQFTask((CB_PTR)xchg);
 
+              #if SMX_CFG_PORTAL
+               if (msg->con.bnd)
+               {
+                  xchg->bct = smx_ct; /* client */
+                  /* msg->onr  = smx_ct */
+               }
+               else
+              #endif
+               {
+                  xchg->bct = NULL;
+                  msg->onr  = task; /* (server) */
+               }
+
                /* if task queue is empty reset tq flag */
                if (xchg->fl == 0)
                   xchg->flags.tq = 0;
-
-              #if SMX_CFG_SSMX
-               /* if msg is not bound to sender, set its owner to task */
-               if (!msg->con.bnd)
-              #endif
-                  msg->onr = task;
 
                /* if priority promotion is enabled, xchg owner = task */
                if (xchg->flags.pi)
@@ -587,30 +594,22 @@ bool smx_MsgSend(MCB_PTR msg, XCB_PTR xchg, u8 pri, void* reply)
                smx_PNQMsg((CB_PTR)xchg, msg, xchg->cbtype);
                xchg->flags.mq = 1;
 
-               /* test for priority promotion if it is enabled */ 
+               /* possible priority promotion, if enabled */ 
                if (xchg->flags.pi == 1)
+                  smx_MsgPriorityPromotion(xchg, msg);
+
+              #if SMX_CFG_PORTAL
+               if (msg->con.bnd)
                {
-                  TCB_PTR onr = xchg->onr;
-                  /* promote onr->pri if msg priority is higher */
-                  if (onr != NULL && msg->pri > onr->pri)
-                  {
-                     onr->pri     = msg->pri;
-                     onr->prinorm = msg->pri; /*<3>*/
-                     smx_ReQTask(onr);
-                  }
-                  else 
-                  {
-                     /* promote onr->prinorm if msg priority is higher */
-                     if (onr != NULL && msg->pri > onr->prinorm)
-                     {
-                        onr->prinorm = msg->pri; /*<3>*/
-                     }
-                  }     
+                  xchg->bct = smx_ct; /* client */
+               /* msg->onr  = smx_ct */
                }
-              #if SMX_CFG_SSMX
-               if (!msg->con.bnd)
+               else
               #endif
-                  msg->onr = (TCB_PTR)xchg;
+               {
+                  xchg->bct = NULL;
+                  msg->onr = (TCB_PTR)xchg; /* exchange */
+               }
             }
          }
          else /* broadcast exchange */
@@ -815,9 +814,47 @@ bool smx_MsgXchgSet(XCB_PTR xchg, SMX_ST_PAR par, u32 v1, u32 v2)
 }
 
 /*===========================================================================*
-*                            INTERNAL SUBROUTINES                            *
+*                                 SUBROUTINES                                *
 *                            Do Not Call Directly                            *
 *===========================================================================*/
+
+/*
+*  smx_MsgPriorityPromotion()
+*
+*  Raises the priority of the server task to that of a higher priority message 
+*  received at its exchange. For a tunnel portal, it also raises the priority 
+*  of the bound client to that of the received message.
+*/
+void smx_MsgPriorityPromotion(XCB_PTR xchg, MCB_PTR msg)
+{
+   /* promote server priority, if msg priority is higher */
+   TCB_PTR svr = xchg->onr;
+   if (svr != NULL)
+   {
+      if (msg->pri > svr->pri)
+      {
+         svr->pri     = msg->pri;
+         svr->prinorm = msg->pri; /*<3>*/
+         if (svr->fl != NULL)
+            smx_ReQTask(svr);
+      }
+      else if (msg->pri > svr->prinorm)
+      {
+         svr->prinorm = msg->pri; /*<3>*/
+      }
+   }
+   /* promote bound client priority, if server priority promoted <4> */
+   TCB_PTR bct = xchg->bct;
+   if (bct != NULL)
+   {
+      if (bct->pri != svr->pri)
+      {
+         bct->pri = svr->pri;
+         if (bct->fl != NULL)
+            smx_ReQTask(bct);
+      }
+   }
+}
 
 /*
 *  smx_MsgRel_F()
@@ -873,7 +910,8 @@ bool smx_MsgRel_F(MCB_PTR msg, u16 clrsz)
             return false;
       }
    }
-   /* release MCB to its pool and clear it and its handle */
+
+   /* release MCB to its pool, clear it, and clear its handle */
    mhp = msg->mhp;
    sb_BlockRel(&smx_mcbs, (u8*)msg, sizeof(MCB));
    if (mhp)
@@ -941,10 +979,19 @@ MCB_PTR smx_MsgReceive_F(XCB_PTR xchg, u8** bpp, u32 timeout, MCB_PTR* mhp)
             if (xchg->mode != SMX_XCHG_BCST)
             {
                msg = smx_DQFMsg((CB_PTR)xchg);
-              #if SMX_CFG_SSMX
-               if (!msg->con.bnd)
+
+              #if SMX_CFG_PORTAL
+               if (msg->con.bnd)
+               {
+                  xchg->bct = smx_ct; /* client */
+                  /* msg->onr  = smx_ct */
+               }
+               else
               #endif
+               {
+                  xchg->bct = NULL;
                   msg->onr = (smx_clsr ? (TCB_PTR)smx_clsr : ct);
+               }
             }
             else
                msg = (MCB_PTR)xchg->fl;
@@ -971,7 +1018,9 @@ MCB_PTR smx_MsgReceive_F(XCB_PTR xchg, u8** bpp, u32 timeout, MCB_PTR* mhp)
                }
                /* if priority promotion is enabled, ct becomes xchg owner */
                if (xchg->flags.pi)
+               {
                   xchg->onr = ct;
+               }
             }
            #if SMX_CFG_SSMX
             TCB_PTR  taskp;
@@ -1071,4 +1120,7 @@ bool smx_MsgXchgClear_F(XCB_PTR xchg)
       when it is released, onr->pri = fmsg->pri, where fmsg = first msg 
       waiting. If onr->pri has been increased by a timeout these ensure that
       if onr->pri is returned to onr->prinorm, onr->pri == fmsg->pri.
+   4. A client task bound to a server must have the same priority as the server. 
+      This occurs with tunnel portals. The client task is returned to its normal
+      priority when its portal connection is closed.
 */

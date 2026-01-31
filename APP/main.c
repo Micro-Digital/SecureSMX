@@ -1,22 +1,26 @@
 /*
-* main.c                                                 Version 5.4.0
+* main.c                                                    Version 6.0.0
 *
 * Application main() and initialization code running non-partitioned.
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: David Moore, Ralph Moore
 *
@@ -33,11 +37,12 @@
          <n> = footnote n
 ============================================================================*/
 
-#include "smx.h"
+#include "xsmx.h"
 #include "main.h"
 #include "cpmap.h"
 
 #if SMX_CFG_SSMX && SB_CPU_ARMM7
+#pragma diag_suppress=Ta168  /* ignore warning that next line overrides existing prefix */
 #pragma section_prefix = ".pb1"  /* plug block sections */
 #endif
 
@@ -121,7 +126,8 @@ void ainit(u32)
   #if (defined(SMX_STM32CUBEMX) && defined(SMX_TXPORT))
    tx_application_define(0);  /* initialize middleware and application */
   #else
-   mw_modules_init();         /* initialize middleware */
+   if (!mw_modules_init())    /* initialize middleware */
+      smx_ERROR(SMXE_INIT_MOD_FAIL, 2);
    appl_init();               /* initialize application */
   #endif
 

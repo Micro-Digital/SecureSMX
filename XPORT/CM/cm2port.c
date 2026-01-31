@@ -1,9 +1,9 @@
 /*
-* cm2port.c                                                   Version 5.4.0
+* cm2port.c                                                 Version 6.0.0
 *
 * CMSIS-RTOS2 to SMX Porting Functions
 *
-* Copyright (c) 2025 Micro Digital Inc.
+* Copyright (c) 2025-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
 * This software is confidential and proprietary to Micro Digital Inc.

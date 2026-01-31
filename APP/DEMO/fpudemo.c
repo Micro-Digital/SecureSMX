@@ -1,5 +1,5 @@
 /*
-* fpudemo.c                                                 Version 5.4.0
+* fpudemo.c                                                 Version 6.0.0
 *
 * Floating Point Demo. Tests that FPU state is saved and restored
 * properly on task switches using hardware auto save on Cortex-M4/M7
@@ -11,20 +11,24 @@
 * SSMX: This is an example of a umode partition that accesses another partition 
 * (console partition) via its portal in order to display messages.
 *
-* Copyright (c) 2010-2025 Micro Digital Inc.
+* Copyright (c) 2010-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: Xingsheng Wan and David Moore
 *
@@ -214,7 +218,7 @@ void fpudemo_init(void)
   #if CP_PORTAL
    #if SB_CPU_ARMM7
     /* open console portal for fpudemo */
-    mp_FPortalOpen(&cpcli_fpu, CP_SLOT_FPU, 80, 1, PRI_HI, 5, "fpu_rxchg");
+    mp_FPortalOpen(&cpcli_fpu, CP_SLOT_FPU, 80, 1, 5, "fpu_rxchg");
    #elif SB_CPU_ARMM8
     /* use helper task to open console portal <2> */
     fpu_cpinit = smx_TaskCreate(fpu_cpinit_main, PRI_MAX, 500, SMX_FL_UMODE, "fpu_cpinit", NULL, NULL);
@@ -243,7 +247,7 @@ void fpudemo_exit(void)
 void fpu_cpinit_main(u32)
 {
    /* open console portal for fpudemo <2> */
-   mp_FPortalOpen(&cpcli_fpu, CP_SLOT_FPU, 80, 1, PRI_HI, 5, "fpu_rxchg");
+   mp_FPortalOpen(&cpcli_fpu, CP_SLOT_FPU, 80, 1, 5, "fpu_rxchg");
 
    smx_TaskDelete(&fpu_cpinit);
 }

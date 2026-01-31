@@ -1,22 +1,26 @@
 /*
-* portl.h                                                   Version 5.4.0
+* portl.h                                                   Version 6.0.0
 *
 * Portal definitions.
 *
-* Copyright (c) 2019-2025 Micro Digital Inc.
+* Copyright (c) 2019-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Author: Ralph Moore
 *
@@ -121,18 +125,16 @@ typedef struct FPSS {      /* FREE PMSG PORTAL SERVER STRUCTURE */
    FPSS**      pshp;          /* free portal structure handle pointer */
 } FPSS;
 
-#define MP_TPCS_MHP_OFFSET 28
-
 typedef struct TPCS {       /* TUNNEL PORTAL CLIENT STRUCTURE */
    const char* pname;         /* portal name <1> */
    XCB*        sxchg;         /* server exchange (alias) <1> */
    MCB*        pmsg;          /* portal msg */
    SCB*        csem;          /* client semaphore */
    SCB*        ssem;          /* server semaphore */
+   TPMH*       mhp;           /* message header ptr <4> */
    u8          open;          /* portal is open <2> */
    u8          pad1;
    u16         pad2;
-   TPMH*       mhp;           /* message header ptr */
    void*       shp;           /* service header ptr */
    u8*         mdp;           /* message data ptr -- same as TPSS */
    u32         mdsz;          /* message data size */
@@ -160,8 +162,10 @@ typedef struct TPSS {      /* TUNNEL PORTAL SERVER STRUCTURE */
 } TPSS;
 
 /*===========================================================================*
-*                            Portal API Routines                             *
+*                       Portal API And Other Routines                        *
 *===========================================================================*/
+
+void  mp_SetDAF(u32 n); /* set deferred action function */
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,15 +174,15 @@ extern "C" {
 
 /* client */
 bool  mp_FPortalClose(FPCS* pch, u8 xsn=0);
-bool  mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, 
+bool  mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, 
                                   u32 tmo=SMX_TMO_INF, const char* rxname=NULL);
 MCB*  mp_FPortalReceive(FPCS* pch, u8** dpp=NULL);
 bool  mp_FPortalSend(FPCS* pch, MCB* pmsg);
 bool  mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 
 #define  mp_TPortalCall(pch, tmo) mp_TPortalSend(pch, 0, 0, tmo)
-bool  mp_TPortalClose(TPCS* pch, u32 tmo=0);
-bool  mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo=SMX_TMO_INF,
+bool  mp_TPortalClose(TPCS* pch);
+bool  mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo=SMX_TMO_INF,
                               const char* ssname=NULL, const char* csname=NULL);
 bool  mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo=0);
 bool  mp_TPortalSend(TPCS* pch, u8* dp=NULL, u32 rqsz=0, u32 tmo=0);
@@ -201,15 +205,14 @@ void  mp_PortalRet(u32 id, u32 rv);
 
 /* Client */
 bool  mp_FPortalClose(FPCS* pch, u8 xsn);
-bool  mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u8 pri, 
-                                  u32 tmo, const char* rxname);
+bool  mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo, const char* rxname);
 MCB*  mp_FPortalReceive(FPCS* pch, u8** dpp);
 bool  mp_FPortalSend(FPCS* pch, MCB* pmsg);
 bool  mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 
 #define  mp_TPortalCall(pch, tmo) mp_TPortalSend(pch, 0, 0, tmo)
-bool  mp_TPortalClose(TPCS* pch, u32 tmo);
-bool  mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u8 pri, u32 tmo,
+bool  mp_TPortalClose(TPCS* pch);
+bool  mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
                               const char* ssname, const char* csname);
 bool  mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
 bool  mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
@@ -323,14 +326,14 @@ void  mp_PortalRet(u32 id, u32 rv);
 #define  MP_ID_FPORTAL_CLOSE              0x02002100
 #define  MP_ID_FPORTAL_CREATE             0x02006101
 #define  MP_ID_FPORTAL_DELETE             0x02004102
-#define  MP_ID_FPORTAL_OPEN               0x02007103
+#define  MP_ID_FPORTAL_OPEN               0x02006103
 #define  MP_ID_FPORTAL_RECEIVE            0x02002104
 #define  MP_ID_FPORTAL_SEND               0x02002105
 #define  MP_ID_FTPORTAL_SEND              0x02003106
-#define  MP_ID_TPORTAL_CLOSE              0x02002107
+#define  MP_ID_TPORTAL_CLOSE              0x02001107
 #define  MP_ID_TPORTAL_CREATE             0x02006108
 #define  MP_ID_TPORTAL_DELETE             0x02003109
-#define  MP_ID_TPORTAL_OPEN               0x0200710A
+#define  MP_ID_TPORTAL_OPEN               0x0200610A
 #define  MP_ID_TPORTAL_RECEIVE            0x0200410B
 #define  MP_ID_TPORTAL_SEND               0x0200410C
 #define  MP_ID_TPORTAL_SERVER             0x0200210D  /*<3>*/
@@ -378,6 +381,7 @@ void  mp_PortalRet(u32 id, u32 rv);
    2. Must be in the same position in TPCS and FPCS.
    3. MP_ID_TPORTAL_SERVER indicates 2 pars, but it logs values not pars,
       like USER events.
+   4. Do not clear as long as pmsg is valid.
 */
 #endif /* SMX_CFG_PORTAL */
 #endif /* MP_PORTL_H */

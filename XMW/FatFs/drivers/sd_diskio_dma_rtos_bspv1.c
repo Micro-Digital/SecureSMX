@@ -52,7 +52,12 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 *
 */
 
-#define SD_TIMEOUT 30 * 1000
+#if defined(SMX)
+#define SD_TIMEOUT (30 * SMX_TICKS_PER_SEC)
+#define SD_DELAY   (SMX_TICKS_PER_SEC/10)
+#else
+#define SD_TIMEOUT (30 * 1000)
+#endif
 
 #define SD_DEFAULT_BLOCK_SIZE 512
 
@@ -133,7 +138,7 @@ static int SD_CheckStatusWithTimeout(uint32_t timeout)
   timer = osKernelSysTick();
   while( osKernelSysTick() - timer < timeout)
 #else
-    timer = osKernelGetTickCount();
+  timer = osKernelGetTickCount();
   while( osKernelGetTickCount() - timer < timeout)
 #endif
   {
@@ -141,6 +146,9 @@ static int SD_CheckStatusWithTimeout(uint32_t timeout)
     {
       return 0;
     }
+#if defined(SMX)
+    smx_DelayTicks(SD_DELAY);
+#endif
   }
 
   return -1;
@@ -296,6 +304,9 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 #endif
                 break;
               }
+#if defined(SMX)
+              smx_DelayTicks(SD_DELAY);
+#endif
             }
 #if (osCMSIS < 0x20000U)
           }
@@ -345,6 +356,9 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
                   {
                     break;
                   }
+#if defined(SMX)
+                  smx_DelayTicks(SD_DELAY);
+#endif
                 }
 
                 if (ret != MSD_OK)
@@ -461,6 +475,9 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
                 res = RES_OK;
                 break;
               }
+#if defined(SMX)
+              smx_DelayTicks(SD_DELAY);
+#endif
             }
 #if (osCMSIS < 0x20000U)
           }
@@ -516,6 +533,9 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
                   {
                     break;
                   }
+#if defined(SMX)
+                  smx_DelayTicks(SD_DELAY);
+#endif
                 }
 
                 if (ret != MSD_OK)

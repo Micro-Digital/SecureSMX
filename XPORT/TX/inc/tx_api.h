@@ -1,5 +1,5 @@
 /*
-* tx_api.h                                                  Version 5.2.0
+* tx_api.h                                                  Version 6.0.0
 *
 * TXPort Application Interface for TXPort.
 *

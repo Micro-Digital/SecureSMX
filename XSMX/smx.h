@@ -1,28 +1,30 @@
 /*
-* smx.h                                                     Version 5.4.0
+* smx.h                                                     Version 6.0.0
 *
 * smx master header file.
 *
 * This file includes all of the smx header files in the proper order.
 * Include it in all C/C++ application and other files that use smx.
 *
-* Copyright (c) 1989-2025 Micro Digital Inc.
+* Copyright (c) 1989-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by US Patents 9,336,072, 9,424,027, 10,318,198,
-* 10,635,831, 11,010,070, 11,132,305, 11,256,631, 11,283,776, 11,461,141,
-* Provisional Patent Application #63/566,664, and one or more patents pending.
+* This Work embodies patents listed here. A patent license is hereby granted
+* to use these patents in this Work and Derivative Works, except in another
+* RTOS or OS.
+* US Patents 9,336,072, 9,424,027, 10,318,198, 10,635,831, 11,010,070, 11,132,305,
+* 11,256,631, 11,283,776, 11,461,141, Provisional Patent Application #63/566,664,
+* and one or more patents pending.
 *
-* A patent license is granted according to the License above.
 * This entire comment block must be preserved in all copies of this file.
-*
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
 *
 * Author: David Moore
 *

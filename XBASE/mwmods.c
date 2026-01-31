@@ -1,24 +1,28 @@
 /*
-* mwmods.c                                                  Version 5.4.0
+* mwmods.c                                                  Version 6.0.0
 *
 * Initialization, exit, and other routines for middleware modules
 *
 * Search for USER comments to find places that may need your attention.
 *
-* Copyright (c) 1995-2025 Micro Digital Inc.
+* Copyright (c) 1995-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
 *
+* SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-MDI-Commercial
+*
 * This software, documentation, and accompanying materials are made available
-* under the Apache License, Version 2.0. You may not use this file except in
-* compliance with the License. http://www.apache.org/licenses/LICENSE-2.0
+* under a dual license, either GPLv2 or Commercial. You may not use this file
+* except in compliance with either License. GPLv2 is at www.gnu.org/licenses.
+* It does not permit the incorporation of this code into proprietary programs.
 *
-* SPDX-License-Identifier: Apache-2.0
+* Commercial license and support services are available from Micro Digital.
+* Inquire at support@smxrtos.com.
 *
-* This Work is protected by patents listed in smx.h. A patent license is
-* granted according to the License above. This entire comment block must be
-* preserved in all copies of this file.
+* This Work embodies patents listed in smx.h. A patent license is hereby
+* granted to use these patents in this Work and Derivative Works, except in
+* another RTOS or OS.
 *
-* Support services are offered by MDI. Inquire at support@smxrtos.com.
+* This entire comment block must be preserved in all copies of this file.
 *
 * Authors: various
 *
@@ -60,24 +64,19 @@ bool fatfs_exit(void);
 * This routine initializes middleware modules. It is called from ainit().
 ***********************************************************************/
 
-void mw_modules_init(void)
+bool mw_modules_init(void)
 {
-  #if SMX_CFG_SSMX
-   if (0
-   #if defined(MW_FATFS)
-      || !fatfs_init()
-     #if FP_PORTAL
-      || !fp_init(FP_SSLOT)
-     #endif
+  #if defined(MW_FATFS)
+   if (!fatfs_init()) return(false);
+   #if FP_PORTAL
+   if (!fp_init(FP_SSLOT)) return(false);
    #endif
-   #if defined(MW_LWIP)
-      || !lwip_init()
-   #endif
-      )
-   {
-      smx_ERROR(SMXE_INIT_MOD_FAIL, 2);
-   }
   #endif
+  #if defined(MW_LWIP)
+   if (!lwip_init()) return(false);
+  #endif
+
+   return(true);
 }
 
 
@@ -85,20 +84,20 @@ void mw_modules_init(void)
 * This routine exits middleware modules. It is called from aexit().
 ***********************************************************************/
 
-void mw_modules_exit(void)
+bool mw_modules_exit(void)
 {
   #if defined(MW_LWIP) && SMX_CFG_SSMX
-   lwip_exit();
+   if (!lwip_exit()) return(false);
+  #endif
+  #if defined(MW_FATFS) && FP_PORTAL
+   if (!fp_exit()) return(false);
   #endif
 
-  #if defined(MW_FATFS) && FP_PORTAL
-   fp_exit();
-  #endif
+   return(true);
 }
 
 
 #if defined(MW_FATFS)
-
 
 #include "cmsis_os2.h"
 #define READ_CPLT_MSG      (uint32_t) 1
