@@ -20,6 +20,7 @@ Manuals are in DOC\Manuals. The SecureSMX manual supplements the SMX manuals.
 
 IAR Embedded Workbench for Arm v9.40.2 or later is required. We mainly work
 with this version currently, but we also tested quickly with v9.70.1.
+Free 14 day evaluation at www.iar.com/embedded-development-tools/free-trials.
 
 See license.txt and welcome.txt.
 

@@ -17,5 +17,5 @@ another RTOS or OS.
 
 This license file must be included in all copies of this Work.
 
-SMX and middleware pre-v5.40 are not open source. They are subject to our
+SMX and middleware pre-v5.4.0 are not open source. They are subject to our
 commercial license agreement and must not be posted publicly.
