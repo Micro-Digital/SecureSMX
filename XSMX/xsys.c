@@ -1,5 +1,5 @@
 /*
-* xsys.c                                                    Version 6.0.0
+* xsys.c                                                    Version 6.1.0
 *
 * smx System Service Functions
 *
@@ -32,8 +32,10 @@
 static void smx_TickRecovery(void);
 
 /* internal variables */
+#if SB_CFG_TM
 static u32  pd_te;
 static u32  pd_ts;
+#endif
 static u32  ticks_lost;
 
 /*

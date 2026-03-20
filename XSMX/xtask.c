@@ -1,5 +1,5 @@
 /*
-* xtask.c                                                   Version 6.0.0
+* xtask.c                                                   Version 6.1.0
 *
 * smx Task Functions
 *
@@ -326,7 +326,6 @@ TCB_PTR smx_TaskCurrent(void)
 */
 bool smx_TaskDelete(TCB_PTR* thp)
 {
-   u32*     p;
    bool     pass;
    TCB_PTR  task = (thp ? *thp : NULL);
 
@@ -375,7 +374,7 @@ bool smx_TaskDelete(TCB_PTR* thp)
                   smx_RelPoolStack(task); /* shared stack */
                   #if SMX_CFG_STACK_SCAN
                   /* clear task handle from stack block owner fields <6> */
-                  for (p = (u32*)smx_scanstack; p != NULL; p = (u32*)*p)
+                  for (u32* p = (u32*)smx_scanstack; p != NULL; p = (u32*)*p)
                      if (*(p + 1) == (u32)task)
                         *(p + 1) = NULL;
                   #endif
@@ -1139,7 +1138,6 @@ bool smx_StackPoolCreate(void)
 */
 void smx_TaskDeleteLSRMain(u32 taskp)
 {
-   u32*     p;
    bool     pass = true;
    TCB_PTR  task = *(TCB_PTR*)taskp;
 
@@ -1162,7 +1160,7 @@ void smx_TaskDeleteLSRMain(u32 taskp)
          smx_RelPoolStack(task); /* shared stack */
          #if SMX_CFG_STACK_SCAN
          /* clear task handle from stack block owner fields <6> */
-         for (p = (u32*)smx_scanstack; p != NULL; p = (u32*)*p)
+         for (u32* p = (u32*)smx_scanstack; p != NULL; p = (u32*)*p)
             if (*(p + 1) == (u32)task)
                *(p + 1) = NULL;
          #endif

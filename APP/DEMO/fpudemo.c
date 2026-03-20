@@ -341,7 +341,7 @@ void fpu_demo2_main(u32)
 static void fpudemo_msg(int line, u32* dump)
 {
    #if FPU_DEMO_DISPLAY
-    static char str[128];
+    char str[128];
     char temp[16];
     int  i, j;
 

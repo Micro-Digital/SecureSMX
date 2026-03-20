@@ -286,7 +286,7 @@ void MMF_Handler(void)
    }
    else
    {
-      smx_EM(SBE_CPU_MMF_VIOL, 1);        /* error manager */
+      smx_EM(SBE_CPU_MMF_VIOL, 1);     /* error manager */
       *(u32*)ARMM_CFSR = *ARMM_CFSR;   /* clear logged faults */
    }
 }

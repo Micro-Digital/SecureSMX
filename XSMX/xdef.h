@@ -1,5 +1,5 @@
 /*
-* xdef.h                                                    Version 6.0.0
+* xdef.h                                                    Version 6.1.0
 *
 * smx constants, error numbers, and SSR IDs.
 *
@@ -36,7 +36,7 @@
 *===========================================================================*/
 
 #define  SMX                           /* used in eheap and third-party code */
-#define  SMX_VERSION       0x0600      /* change in xarmm_iar.inc <1> */
+#define  SMX_VERSION       0x0610      /* change in xarmm_iar.inc <1> */
 
 /* control block types */ 
 typedef enum {

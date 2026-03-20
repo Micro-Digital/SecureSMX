@@ -1,5 +1,5 @@
 /*
-* xglob.h                                                   Version 6.0.0
+* xglob.h                                                   Version 6.1.0
 *
 * smx globals
 *
@@ -32,6 +32,7 @@
 extern FUNV_PTR   smx_autostop;     /* autostop function address */
 extern PCB        smx_bcbs;         /* BCB pool */
 extern LCB_PTR    smx_clsr;         /* current LSR */
+extern u32*       smx_cmpap;        /* current MPA pointer */
 #if SMX_CFG_PROFILE
 extern CPS        smx_cpa;          /* coarse profile accumulator */
 extern CPS        smx_cpd;          /* coarse profile display */
@@ -79,7 +80,9 @@ extern u32        smx_lockctr;      /* scheduler lock nesting counter */
 extern LQC_PTR    smx_lqi;          /* pointer to beginning of LSR queue */
 extern LQC_PTR    smx_lqx;          /* pointer to end of LSR queue */
 extern u32        smx_lqctr;        /* number of LSRs in lq */
+#if SMX_CFG_DIAG
 extern u32        smx_lqhwm;        /* LSR queue high water mark */
+#endif
 extern LQC_PTR    smx_lqin;         /* pointer to next free position in lq */
 extern LQC_PTR    smx_lqout;        /* pointer to next LSR to run */
 extern u32        smx_lsr_rtc;      /* LSR runtime counter */

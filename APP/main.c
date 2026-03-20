@@ -1,5 +1,5 @@
 /*
-* main.c                                                    Version 6.0.0
+* main.c                                                    Version 6.1.0
 *
 * Application main() and initialization code running non-partitioned.
 *
@@ -135,7 +135,7 @@ void ainit(u32)
    smx_evbn = smx_evbi;       /* start event monitoring */
   #endif
 
- #if SMX_CFG_SSMX
+ #if SMX_CFG_SSMX && 0 /* 0 to leave super region MPA so Idle can do heap scans for middleware heaps. */
    /* change to idle template */
   #if SB_CPU_ARMM7
    mp_MPACreate(smx_Idle, &mpa_tmplt_idle, 0xF, 8);

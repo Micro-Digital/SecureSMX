@@ -1,5 +1,5 @@
 /*
-* xpmsg.c                                                   Version 6.0.0
+* xpmsg.c                                                   Version 6.1.0
 *
 * smx Protected Message Functions
 *
@@ -378,10 +378,12 @@ MCB_PTR smx_PMsgReceive(XCB_PTR xchg, u8** bpp, u8 dsn, u32 timeout, MCB_PTR* mh
          else
             pmsg->con.osn = rsn;
                
+        #if SMX_CFG_PORTAL
          /* if pmsg is a free portal message, load pmsg into its FPCS */
          FPCS* pch = (FPCS*)pmsg->fpcsh;
          if (pch)
             pch->pmsg = pmsg;
+        #endif
       }
       else
       {

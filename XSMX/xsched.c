@@ -1,5 +1,5 @@
 /*
-* xsched.c                                                  Version 6.0.0
+* xsched.c                                                  Version 6.1.0
 *
 * smx scheduler and related functions.
 *
@@ -33,8 +33,10 @@ static bool    FixQCBFL(CB_PTR q);
 static u32     GetCTRV(void);
 static void    RepairRQ(void);
 static void    smx_GetPoolStack(TCB_PTR task);
+#if SMX_CFG_STACK_SCAN
 static void    smx_StackScanB(void); /* scans a bound stack */
 static void    smx_StackScanU(void); /* scans an unbound stack */
+#endif
 
 #if SMX_CFG_SSMX
 #include "mparmm.h"
@@ -45,7 +47,7 @@ static void    smx_StackScanU(void); /* scans an unbound stack */
 ============================================================================*/
 
 /* This copyright must be retained in the binary image */
-const char* smx_copyright1 = "SMX (R) v6.0.0 Copyright (c) 1988-2026";
+const char* smx_copyright1 = "SMX (R) v6.1.0 Copyright (c) 1988-2026";
 const char* smx_copyright2 = "Micro Digital Inc. All rights reserved.";
 
 
@@ -95,9 +97,12 @@ bool smx_SchedRunLSRs(u32 reload)
    {
       sb_TM_START(&sb_ts1); /* beginning of LSR time measurements */
 
-      /* update smx_lqhwm and decrement smx_lqctr */
+     #if SMX_CFG_DIAG
+      /* update smx_lqhwm */
       if (smx_lqctr > smx_lqhwm)
          smx_lqhwm = smx_lqctr;
+     #endif
+
       smx_lqctr--;
 
       sb_INT_ENABLE();
@@ -110,35 +115,36 @@ bool smx_SchedRunLSRs(u32 reload)
       if (smx_lqout > smx_lqx)
          smx_lqout = smx_lqi;
 
-      /* call LSR */
       if (smx_clsr->flags.trust)
       {
+         /* run trusted LSR */
+
         #if SMX_CFG_SSMX
-         /* reload MPU for ct if a safe LSR (uLSR or pLSR) just ran */
+         /* reload MPU for ct if sLSR just ran */
          if (reload)
             mp_MPULoad(true);
         #endif
-         /* run trusted LSR (tLSR) */
+
          smx_EVB_LOG_LSR(smx_clsr);
          smx_RTC_LSR_START();
-         smx_clsr->fun(par);  /* run LSR */
+         smx_clsr->fun(par);  /* run tLSR */
          sb_TM_LSR();         /* end of tLSR time measurement */
          smx_RTC_LSR_END();
          smx_EVB_LOG_LSR_RET(smx_clsr);
          smx_clsr = 0;
          sb_INT_DISABLE();
       }
+     #if SMX_CFG_SSMX
       else
       {
-        #if SMX_CFG_SSMX
-         /* prepare to run safe LSR */
+         /* prepare to run safe LSR*/
          mp_MPULoad(false);
          smx_StartSafeLSR(par);
          smx_EVB_LOG_LSR(smx_clsr);
          sb_INT_DISABLE();
-         return true;         /* run LSR (return to smx_PendSV_Handler) */
-        #endif
+         return true;         /* to smx_PendSV_Handler to run sLSR */
       }
+     #endif
    }
    return false;
 }
@@ -146,18 +152,18 @@ bool smx_SchedRunLSRs(u32 reload)
 /*
 *  smx_SchedRunTasks()
 *
-*  Task Scheduler. This function is called from smx_ISRExit(), smx_SSRExit(),
-*  and smx_Go(). smx_srnest is set to 1 prior to these calls and ensures
-*  that ISRs return to the point of interrupt within the scheduler. Hence,
-*  interrupts can be enabled during most parts of this scheduler without
-*  interfering with the task scheduling process. LSR flybacks ensure that if an
-*  LSR becomes ready to run due to an interrupt, it will run ahead of the task
-*  being scheduled. Then a flyback occurs in case a higher priority task has
-*  become ready to run. Normally the idle task should always be ready to run.
-*  However, if not, the scheduler tries to recover if smx_rqtop or smx_rq have
-*  been damaged, then waits for an ISR to invoke an LSR that starts or resumes
-*  a task. Prior to stopping, suspending, or continuing a task, a test is made
-*  to determine if there is or has been a stack overflow. If so, smx_EM() is
+*  Task Scheduler. This function is called from smx_PendSV_Handler(). 
+*  smx_srnest is set to 1 prior to this call and ensures that ISRs return
+*  to the point of interrupt within the scheduler. Hence, interrupts can be
+*  enabled during most parts of this scheduler without interfering with the
+*  task scheduling process. LSR flybacks ensure that if an LSR becomes ready
+*  to run due to an interrupt, it will run ahead of the task being scheduled.
+*  Then a flyback occurs in case a higher priority task has become ready to
+*  run. Normally the idle task should always be ready to run. However, if not,
+*  the scheduler tries to recover if smx_rqtop or smx_rq have been damaged,
+*  then waits for an ISR to invoke an LSR that starts or resumes a task.
+*  Prior to stopping, suspending, or continuing a task, a test is made to
+*  determine if there is or has been a stack overflow. If so, smx_EM() is
 *  called, which may permanently stop the task. Runs in System Stack, SS.
 */
 void smx_SchedRunTasks(void)
@@ -166,10 +172,10 @@ void smx_SchedRunTasks(void)
    {
       if (smx_ct->flags.stk_chk == 1)
       {
-        #if SB_CPU_ARMM7
-         /* check for stack pad overflow <10> */
+        #if SB_CPU_ARMM7 /*<8>*/
+         /* check for stack pad overflow */
          if (((u32)smx_ct->sp <= (u32)smx_ct->spp) ||
-            (smx_ct->shwm >= (u32)smx_ct->sbp - (u32)smx_ct->spp)) /*<6>*/
+            (smx_ct->shwm >= (u32)smx_ct->sbp - (u32)smx_ct->spp)) /*<4>*/
          {
             smx_EM(SMXE_STK_OVFL, 2);
          }
@@ -178,7 +184,7 @@ void smx_SchedRunTasks(void)
          if (smx_ct->flags.stk_ovfl == 0)
          {
             /* check for stack overflow -- report first time only */
-            if (((u32)smx_ct->sp <= (u32)smx_ct->stp) || (smx_ct->shwm >= smx_ct->ssz)) /*<6>*/
+            if (((u32)smx_ct->sp <= (u32)smx_ct->stp) || (smx_ct->shwm >= smx_ct->ssz)) /*<4>*/
             {
                smx_ct->flags.stk_ovfl = 1;
                smx_EM(SMXE_STK_OVFL, 0);
@@ -216,7 +222,7 @@ void smx_SchedRunTasks(void)
       }
       smx_lockctr = 0;   /* clear lock counter */
       smx_EVB_LOG_TASK_END();
-      sb_TM_END(sb_ts1, &sb_te[0]); /* end of stop or suspend */
+      sb_TM_END(sb_ts1, &sb_te[3]); /* end of stop or suspend */
 
 get_top_task:
       sb_TM_START(&sb_ts2);   /* beginning of resume or start */
@@ -237,10 +243,10 @@ dispatch_next_task:
 
      #if SMX_CFG_RTLIM
       /* check if runtime limit has been reached */
-      u32 rtlim = (smx_ctnew->parent == NULL ? smx_ctnew->rtlim : *(u32*)smx_ctnew->rtlim); /*<7>*/
-      if (rtlim > 0) /*<8>*/
+      u32 rtlim = (smx_ctnew->parent == NULL ? smx_ctnew->rtlim : *(u32*)smx_ctnew->rtlim); /*<5>*/
+      if (rtlim > 0) /*<6>*/
       {
-         u32 rtlimctr = (smx_ctnew->parent == NULL ? smx_ctnew->rtlimctr : *(u32*)smx_ctnew->rtlimctr); /*<7>*/
+         u32 rtlimctr = (smx_ctnew->parent == NULL ? smx_ctnew->rtlimctr : *(u32*)smx_ctnew->rtlimctr); /*<5>*/
          if (rtlimctr >= rtlim)
          {
             /* suspend smx_ctnew */
@@ -366,7 +372,7 @@ dispatch_next_task:
             smx_autostop = &smx_SchedAutoStop;
          #endif
 
-         /* call hooked start function <9> */
+         /* call hooked start function <7> */
          if (smx_ct->flags.hookd)
             smx_ct->cbfun(SMX_CBF_START, 0);
 
@@ -470,25 +476,25 @@ void smx_SSREnter7(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6, u32 p
 /* 
    SSR Exit -- used to exit SSRs that can cause a task switch  
 */
-u32 smx_SSRExit(u32 SsrReturnValue, u32 id)
+u32 smx_SSRExit(u32 rv, u32 id)
 {
-   smx_EVB_LOG_SSR_RET(SsrReturnValue, id);
+   smx_EVB_LOG_SSR_RET(rv, id);
    if (smx_srnest == 1)
    {
       smx_RTC_TASK_END();
       sb_INT_DISABLE();
       if ((smx_sched > 0) || (smx_lqctr > 0))
       {
-         smx_ct->rv = SsrReturnValue; /* save in case smx_ct suspended */
-         if ((smx_GetPSR() & 0x1FF) != 0xE) /* if not in PendSV handler <5> */
+         smx_ct->rv = rv;     /* save in case smx_ct suspended */
+         if ((smx_GetPSR() & 0x1FF) != 0xE) /* if not in PendSV handler <3> */
          {
-            smx_PENDSVH();  /* PSVH runs here, unless in SVC <3> */
+            smx_PENDSVH();    /* PSVH runs here, unless in SVC <1> */
          }
          else
          {
             smx_srnest = 0;   /* necessary for deferred action function */ 
          }
-         return(GetCTRV()); /* (ct->rv may != SsrReturnValue) <3>. */
+         return(GetCTRV());   /* ct->rv != rv if ct changed <1> */
       }
       smx_srnest = 0;
       sb_INT_ENABLE();
@@ -501,7 +507,7 @@ u32 smx_SSRExit(u32 SsrReturnValue, u32 id)
          smx_srnest--;
       sb_INT_ENABLE();
    }
-   return SsrReturnValue; /* continue smx_ct, LSR, or SSR */
+   return rv; /* continue smx_ct, LSR, or SSR */
 }
 
 /* 
@@ -519,9 +525,9 @@ u32 smx_SSRExitIF(u32 rv)
          smx_ct->rv = rv;     /* save in case smx_ct suspended */
          smx_ct->srnest = smx_srnest;
          smx_srnest = 1;
-         if ((smx_GetPSR() & 0x1FF) != 0xE) /* verify not in PendSV handler <5> */
+         if ((smx_GetPSR() & 0x1FF) != 0xE) /* verify not in smx_PendSVHandler() <3> */
          {
-            smx_PENDSVH();    /* PSVH runs here, unless in SVC <3> */
+            smx_PENDSVH();    /* PSVH runs here, unless in SVC <1> */
          }
          sb_INT_ENABLE();         
          /* ct resumes here */
@@ -693,29 +699,32 @@ void smx_GetPoolStack(TCB_PTR task)
    task->ssz = SMX_SIZE_STACK;
    smx_eoos_once = true;
 
- #if SMX_CFG_SSMX
-   u32* mp = mp_MPA_PTR(task, (MP_MPU_ACTVSZ - 1));
-   u32  bp = (u32)smx_freestack;
-   u32  sz = SMX_SIZE_STACK_BLK;
-
-   /* load task stack region into the task's MPA */
-  #if SB_CPU_ARMM7
-   *mp++ = bp | 0x10 | (MP_MPU_SZ - 1);
-   *mp   = 0x13020000 | ((30-__CLZ(sz)) << 1) | 1;
-   #if MP_MPA_DEV
-   *++mp = (u32)"stack";
-   #endif
-  #elif SB_CPU_ARMM8
-   if (task->flags.umode)
+  #if SMX_CFG_SSMX
+   if (task->mpap != mpa_dflt)
    {
-      *mp++ = bp | 0x3;
-      *mp   = ((bp + sz - 1) & 0xFFFFFFE0) | 1;
+      u32* mp = mp_MPA_PTR(task, (MP_MPU_ACTVSZ - 1));
+      u32  bp = (u32)smx_freestack;
+      u32  sz = SMX_SIZE_STACK_BLK;
+
+      /* load task stack region into the task's MPA */
+     #if SB_CPU_ARMM7
+      *mp++ = bp | 0x10 | (MP_MPU_SZ - 1);
+      *mp   = 0x13020000 | ((30-__CLZ(sz)) << 1) | 1;
       #if MP_MPA_DEV
       *++mp = (u32)"stack";
       #endif
+     #elif SB_CPU_ARMM8
+      if (task->flags.umode)
+      {
+         *mp++ = bp | 0x3;
+         *mp   = ((bp + sz - 1) & 0xFFFFFFE0) | 1;
+         #if MP_MPA_DEV
+         *++mp = (u32)"stack";
+         #endif
+      }
+     #endif /* SB_CPU_ARMM8*/
    }
-  #endif /* SB_CPU_ARMM8*/
- #endif  /* SMX_CFG_SSMX */
+  #endif  /* SMX_CFG_SSMX */
 
    smx_freestack = *(void**)smx_freestack;
    *(u32*)task->spp = SB_STK_FILL_VAL;
@@ -748,7 +757,7 @@ void smx_StackScanB(void)
 
       /* update shwm */
       for (; p < ep && *p == SB_STK_FILL_VAL; p++) {}
-      if (onr->stp != NULL && onr->stp == stp)  /* avoid erroneous report if released <4> */
+      if (onr->stp != NULL && onr->stp == stp)  /* avoid erroneous report if released <2> */
       {
          smx_LSRsOff();
          onr->shwm = (ep - p)*4;
@@ -821,20 +830,14 @@ void smx_StackScanU(void)
 
 /*
    Notes:
-   1. (deleted)
-   2. Newer versions of GNU have added an optimization that saves the
-      address of smx_ct on the stack and references it rather than the
-      literal pool, but the reference is done after smx_SWITCH_STACKS()
-      in smx_SchedRunTasks(), causing failure. We could not isolate
-      which optimization causes this. -O0, -O1, -Os ok; -O2, -O3 not.
-   3. smx_PendSVHandler normally runs at the point of trigger in
-      smx_SSRExit(), but not when the SSR is run using a SVC exception.
+   1. smx_PendSVHandler normally runs at the point of trigger in
+      smx_SSRExit(), but not when the SSR is run via an SVC exception.
       In that case, it pends until SVC handler exits and tail-chains to it.
-      The GetCTRV() operation is useless, since the task switch and
-      complementary SSR have not yet run. The complementary SSR passes
-      the return value to the suspended task via smx_PUT_RV_IN_EXR0(),
-      which puts it in the R0 position in its stack.
-   4. If a one-shot task's stack was about to be scanned by smx_StackScanB(),
+      The GetCTRV() operation is useless, since the task switch and the
+      complementary SSR have not yet run. In this case, the complementary SSR 
+      passes the return value to the suspended task via the R0 position in its 
+      exception frame.
+   2. If a one-shot task's stack was about to be scanned by smx_StackScanB(),
       but then that task preempted the scan (Idle) and ran to completion,
       it would release the stack to the scan pool, changing its top 2 words.
       Returning here, the scan would start and see those changed words
@@ -842,15 +845,13 @@ void smx_StackScanU(void)
       is still assigned to the task. Note that the stack could not be
       released and reassigned to the same task (which would void the check)
       because it stays in the scan pool until smx_StackScanU() runs.
-   5. Invoking PendSV while in PendSV_Handler() -> Hard Fault.
-   6. <= and >= are necessary to avoid damage above the stack. If SMX_CFG_SSMX
-      stack overflow may be reported twice due to an MMF followed by detection 
-      here. However, the MMF does not indicate its cause.
-   7. A child task uses its top parent task's rtlim and rtlimctr.
-   8. If rtlim == 0, smx_ctnew has no runtime limit. Note: Use smx_TaskSet
-      (task, SMXE_ST_RTLIM, limit) to set task's rtlim before starting it.
-   9. Must occur after autostop loaded so cbfun(START) can change it to a 
+   3. Invoking smx_PendSV_Handler() while in it -> Hard Fault.
+   4. <= and >= are necessary to avoid damage above or below the stack. 
+   5. A child task uses its top parent task's rtlim and rtlimctr.
+   6. If rtlim == 0, smx_ctnew has no runtime limit. Note: Use smx_TaskSet
+      (task, SMXE_ST_RTLIM, limit) to set a task's rtlim before starting it.
+   7. Must occur after autostop loaded so cbfun(START) can change it to a 
       custom autostop function.
-   10. PSPLIM detects stack pad overflow for ARMM8.
+   8. PSPLIM detects stack pad overflow for ARMM8.
 */ 
 

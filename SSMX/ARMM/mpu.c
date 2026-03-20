@@ -1,5 +1,5 @@
 /*
-* mpu.c                                                     Version 6.0.0
+* mpu.c                                                     Version 6.1.0
 *
 * ARMM MPU control functions for use by smx and init code.
 *
@@ -316,23 +316,31 @@ void mp_MPULoad(bool task)
 {
    u32* mp;
 
+   /* set MPA pointer, mp and PSPLIM */
+   if (task)
+   {
+      mp = (u32*)smx_ct->mpap;
+     #if SB_CPU_ARMM8
+      __set_PSPLIM((u32)smx_ct->spp);
+     #endif
+   }
+   else
+   {
+      mp = (u32*)smx_clsr->mpap;
+     #if SB_CPU_ARMM8
+      __set_PSPLIM((u32)smx_clsr->stp);
+     #endif
+   }
+
+   /* skip MPU load if mp and smx_cmpap = mpa_dflt */
+   if (mp == (u32*)mpa_dflt && smx_cmpap == (u32*)mpa_dflt)
+      return;
+
    /* Disable the MPU */
    __DMB();
    *ARMM_MPU_CTRL = 0;
 
-   #if SB_CPU_ARMM8
-   /* set stack overflow limit to start of stack block */
-   if (task)
-      __set_PSPLIM((u32)smx_ct->spp);
-   else
-      __set_PSPLIM((u32)smx_clsr->stp);
-   #endif
-
-   /* set MPA pointer, mp, for ct or clsr mpap */
-   if (task)
-      mp = (u32*)smx_ct->mpap;
-   else
-      mp = (u32*)smx_clsr->mpap;
+   smx_cmpap = mp;
 
  #if MP_MPA_DEV /* load MPA[0..ACTVSZ-1] into MPU[fas..sz-1] skipping region names */
    for (u32 n = MP_MPU_FAS; n < MP_MPU_SZ; n++)
@@ -393,11 +401,15 @@ void mp_MPULoad(bool task)
   #elif SB_CPU_ARMM8
    mp_MPULoad_M8(mp);
   #endif /* SB_CPU_ARMM7 */
+
    __asm("pop {r4-r9} \n\t");
  #endif /* MP_MPA_DEV */
 
   #if SMX_CFG_MPU_ENABLE
-   *ARMM_MPU_CTRL = 0x5; /* enable the MPU with background region on */
+   /* enable the MPU with background region on <13> */
+   __asm("ldr r2, =0xE000ED94");
+   __asm("mov r0, #0x5");
+   __asm("str r0, [r2]"); 
   #endif
    __DSB();
    __ISB();
@@ -1084,5 +1096,8 @@ u8* mp_RegionGetHeap(u32 sz, u32 hn, u32* psrd)
       pmode callers can also do SVC calls (unnecessarily), so the same checks
       (restrictions) are done on the block. To make an unrestricted region,
       a pmode caller must make a direct call not an SVC call.
+  13. *ARMM_MPU_CTRL = 0x5; cannot be used here if MP_MPA_DEV = 0 because the
+      intervening assembly code changes the register storing the ARMM_MPU_CTRL
+      address.
 */
 #endif /* SMX_CFG_SSMX */

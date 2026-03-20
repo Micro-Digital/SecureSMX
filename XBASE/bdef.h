@@ -1,5 +1,5 @@
 /*
-* bdef.h                                                    Version 6.0.0
+* bdef.h                                                    Version 6.1.0
 *
 * smxBase Definitions.
 *
@@ -29,7 +29,7 @@
 #ifndef SB_BDEF_H
 #define SB_BDEF_H
 
-#define SB_VERSION 0x0600
+#define SB_VERSION 0x0610
 /*
    Version numbers are of the form XX.X.X. Using the hex scheme above,
    digits up to 15 (0xF) can be represented.
@@ -257,8 +257,9 @@ typedef struct PCB {       /* POOL CONTROL BLOCK -- shared with smx */
 
 extern bool       sb_handler_en;       /* enable fault handlers */
 extern u8*        sb_isp;              /* interrupt stack pointer */
-extern u32        sb_tltsel;           /* LSR type selector for sb_TMLsr() */
-extern u32        sb_te[4];            /* ending times for time measurements */
+extern u32        sb_tltsel;           /* tLSR & pLSR type selector for sb_TMLsr() */
+extern u32        sbu_tltsel;          /* uLSR type selector for sb_TMLsr() */
+extern u32        sb_te[5];            /* ending times for time measurements */
 extern bool       sb_tick_init_done;   /* tick initialization done */
 extern const u32  sb_ticktmr_clkhz;    /* tick timer/counter clock in Hz */
 extern const u32  sb_ticktmr_cntpt;    /* tick timer/counter counts per tick */

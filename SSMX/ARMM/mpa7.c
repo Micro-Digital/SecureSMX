@@ -1,5 +1,5 @@
 /*
-* mpa7.c                                                    Version 6.0.0
+* mpa7.c                                                    Version 6.1.0
 *
 * MPA ARMM7 templates for STM32F7xx processors.
 *
@@ -39,18 +39,16 @@
                                  PMODE TEMPLATES
 *===========================================================================*/
 
-/* Default MPA template -- assigned when a task is created. Allows access to all 
-   MPU regions. <1> */
-MPA mpa_dflt = 
+MPA mpa_dflt = /* default MPA must show all active regions <1> */
 {
-   RGN(0 | RA("sys_code")  | V, PCODE   | SRD("sys_code") | RSIC(scsz)       | EN, "sys_code"),
-   RGN(1 | RA("sys_data")  | V, PDATARW | SRD("sys_data") | RSIC(sdsz)       | EN, "sys_data"),
-   RGN(2 | RA("ram_block") | V, PDATARW | SRD("ram_block")| RSI("ram_block") | EN, "ram_block"),
-   RGN(3 | 0x40000000      | V, PIOR                      | RSIN(0x80000)    | EN, "IO Regs"),
-   RGN(4 | V, 0, 0),
-   RGN(5 | V, 0, 0),
+   RGN(0 | RA("sys_code")  | V, PCODE   | SRD("sys_code")  | RSIC(scsz)       | EN, "sys_code"),
+   RGN(1 | RA("sys_data")  | V, PDATARW | SRD("sys_data")  | RSIC(sdsz)       | EN, "sys_data"),
+   RGN(2 | RA("rom_block") | V, PCODE   | SRD("rom_block") | RSI("rom_block") | EN, "rom_block"),
+   RGN(3 | RA("sram_block")| V, PDATARW | SRD("sram_block")| RSI("sram_block")| EN, "sram_block"),
+   RGN(4 | RA("ram_block") | V, PDATARW | SRD("ram_block") | RSI("ram_block") | EN, "ram_block"),
+   RGN(5 | 0x40000000      | V, PIOR                       | RSIN(0x80000)    | EN, "IO Regs"),
    RGN(6 | V, 0, 0),
-   RGN(7 | V, 0, "stack"),
+   RGN(7 | V, 0, 0),
 };
 
 /* MPA template for idle task during initialization or exit. Allows access to

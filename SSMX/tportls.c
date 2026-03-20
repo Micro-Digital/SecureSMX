@@ -1,5 +1,5 @@
 /*
-* tportls.c                                                 Version 6.0.0
+* tportls.c                                                 Version 6.1.0
 *
 * Tunnel portal server functions and objects.
 *
@@ -165,6 +165,7 @@ void mp_PortalEM(PS* ph, SMX_ERRNO errno, SMX_ERRNO* ep)
    smx_EMHook(errno, NULL, 0);
 }
 
+#if SMX_CFG_EVB
 /*
 * mp_PortalLog()
 *
@@ -230,6 +231,7 @@ void mp_PortalRet(u32 id, u32 rv)
    }
    sb_IntStateRestore(istate);
 }
+#endif /* SMX_CFG_EVB */
 
 #include "xapiu.h"
 #pragma default_function_attributes = @ ".ucom.text"

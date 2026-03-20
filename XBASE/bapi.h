@@ -1,5 +1,5 @@
 /*
-* bapi.h                                                    Version 6.0.0
+* bapi.h                                                    Version 6.1.0
 *
 * smxBase API.
 *
@@ -154,16 +154,29 @@ void     sb_write32_unaligned(u8* addr, u32 val);
 
 /* time measurement macros */
 #if SB_CFG_TM
-#define  sb_TM_INIT()                {sb_TMInit(); /*<1>*/ \
-                                     sb_TMInit();}
-#define  sb_TM_START(p)              sb_TMStart(p);
-#define  sb_TM_END(p, q)             sb_TMEnd(p, q);
-#define  sb_TM_LSR()                 sb_TMLsr();
+#define  sb_TLT_SEL(n)              sb_tltsel = n;
+#define  sb_TM_INIT()               {sb_TMInit(); sb_TMInit();} /*<1>*/
+#define  sb_TM_START(p)             sb_TMStart(p);
+#define  sb_TM_END(p, q)            sb_TMEnd(p, q);
+#define  sb_TM_LSR()                sb_TMLsr();
+#define  sbu_TLT_SEL(n)             sbu_tltsel = n;
+#define  sbu_TM_INIT()              {sbu_TMInit(); sbu_TMInit();} /*<1>*/
+#define  sbu_TM_START(p)            sbu_TMStart(p);
+#define  sbu_TM_END(p, q)           sbu_TMEnd(p, q);
+#define  sbu_TM_END3(p, q, c)       sbu_TMEnd(p, q, c);
+#define  sbu_TM_LSR()               sbu_TMLsr();
 #else
+#define  sb_TLT_SEL(n)
 #define  sb_TM_INIT()
 #define  sb_TM_START(p)
 #define  sb_TM_END(p, q)
 #define  sb_TM_LSR()
+#define  sbu_TLT_SEL(n)
+#define  sbu_TM_INIT()
+#define  sbu_TM_START(p)
+#define  sbu_TM_END(p, q)
+#define  sbu_TM_END3(p, q, c)
+#define  sbu_TM_LSR()
 #endif
 
 /*===========================================================================*

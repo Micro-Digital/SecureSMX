@@ -2,8 +2,8 @@
 
 
 
-                    smx Version 6.0.0 Release Notes
-                           January 24, 2026
+                    smx Version 6.1.0 Release Notes
+                            March 19, 2026
 
 
 
@@ -21,6 +21,15 @@
 
      Introduction
      ------------
+
+     v6.1 notable changes:
+
+     - Tested with each of the config settings in xcfg.h and a couple
+       others disabled, and added/fixed conditionals as needed.
+     - Time measurement functions were tested and corrected.
+     - Default MPA not loaded into MPU if already. This saves time for
+       legacy tasks using the default MPA.
+     - Footnote comments were carefully revised in xarmm_iar.s and xsched.c.
 
      v6.0 notable changes:
 

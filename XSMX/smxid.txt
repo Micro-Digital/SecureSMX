@@ -1,4 +1,4 @@
-smx v6.0.0
+smx v6.1.0
 ----------
 
 This file documents the version of smx and tools supported by this

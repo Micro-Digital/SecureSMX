@@ -1,5 +1,5 @@
 /*
-* xcfg.h                                                    Version 6.0.0
+* xcfg.h                                                    Version 6.1.0
 *
 * smx configuration constants
 *
@@ -32,9 +32,9 @@
 #define SMX_XCFG_H
 
 #define SMX_CFG_DIAG             1  /* enable special diagnostics (.inc)<1> */
-#define SMX_CFG_EVB              1  /* enable event buffer <1> */
+#define SMX_CFG_EVB              1  /* enable event buffer (.inc)<1> */
 #define SMX_CFG_PROFILE          1  /* enable profiling (.inc)<1> */
-#define SMX_CFG_STACK_SCAN       1
+#define SMX_CFG_STACK_SCAN       1  /* enable stack scanning for amount used */
 
 #define SMX_CFG_SSMX             1  /* enable SecureSMX (.inc)<1> */
 
@@ -42,7 +42,7 @@
 #define SMX_CFG_MPU_ENABLE       1  /* enable MPU and umode (.inc)<1><2> */
 #define SMX_CFG_PORTAL           1  /* enable portals */
 #define SMX_CFG_RTLIM            1  /* enable runtime limits (.inc)<1> */
-#define SMX_CFG_TOKENS           1
+#define SMX_CFG_TOKENS           1  /* enable tokens to control resource usage */
 #else
 #define SMX_CFG_MPU_ENABLE       0  /* keep 0 */
 #define SMX_CFG_PORTAL           0  /* keep 0 */

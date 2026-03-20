@@ -1,5 +1,5 @@
 ;
-; xarmm_iar.s  (IAR version)                                Version 6.0.0
+; xarmm_iar.s  (IAR version)                                Version 6.1.0
 ;
 ; ARM-M (e.g. Cortex-M) porting routines used by macros in xarmm.h
 ; that could not be implemented in the compiler's inline assembler.
@@ -153,7 +153,7 @@ smx_SFModPC:
 ;        +20      LR  = address of smx_SchedAutoStop() if ptask
 ;        +20      LR  = address of smxu_SchedAutoStop() if utask
 ;        +24      PC  = smx_ct->fun (= task main function = task entry point)
-;        +28      PSR = 0x01000000 (only T (Thumb) bit set)
+;        +28      PSR = 0x01000000 = Thumb bit
 
 smx_MakeFrame:
          push     {lr}
@@ -180,6 +180,7 @@ mf_cpp:  ldr      r0, =smx_autostop             ; r0 = autostop pointer
         #if SMX_CFG_SSMX
 ; load MPU for ARMM8
 mp_MPULoad_M8:
+         push     {r10, r12}
          ldr      r10, =ARMM_MPU_RNR   ; r10 = RNR
          mov      r12, #MP_MPU_STATSZ
          str      r12, [r10]           ; RNR = MP_MPU_STATSZ
@@ -213,10 +214,11 @@ m2:      ldmia    r0, {r2-r5}          ; read next 2 regions of MPA
          stmia    r1, {r2-r5}          ; load last 2 MPU slots
          b        md                   ; done
 m3:      ldmia    r0, {r2-r7}          ; read next 3 regions of MPA
-         stmia    r1, {r2-r7}          ; load last 3 MPU slots 
-md:      bx       lr                   ; done
+         stmia    r1, {r2-r7}          ; load last 3 MPU slots
+md:      pop      {r10, r12}
+         bx       lr                   ; done
 
-; Make LSR exception stack frame:
+; LSR exception stack frame:
 ;        PSP   -> R0  = par
 ;        +4       R1  = ?
 ;        +8       R2  = ? 
@@ -225,79 +227,60 @@ md:      bx       lr                   ; done
 ;        +20      LR  = smx_SchedAutoStopLSR if pmode
 ;        +20      LR  = smxu_SchedAutoStopLSR if umode
 ;        +24      PC  = smx_clsr->fun
-;        +28      PSR = 0x01000000 (only T (Thumb) bit set)
+;        +28      PSR = 0x01000000 = Thumb bit
 
-smx_MakeFrameLSR: 
-         push     {lr}                        
-         ldr      r12, [r1, #SMX_LCB_OFFS_SBP]  ; r1 -> lcb 
+smx_StartSafeLSR:
+         push     {lr}
+         ldr      r1, =smx_psp_sav              ; save psp stack pointer
+         mrs      r2, psp
+         str      r2, [r1]
+         ldr      r1, =smx_clsr                 ; r1 = smx_clsr address
+         ldr      r1, [r1]                      ; r1 -> LCB
+
+         ; make exception frame <9>                        
+         ldr      r12, [r1, #SMX_LCB_OFFS_SBP]  ; r1 -> LCB 
                                                 ; r12 = lsr stack bottom pointer
          sub      r12, r12, #32                 ; reserve space on lsr stack
                                                 ;   for exception frame
          str      r0, [r12]                     ; save par in ex frame
-         mov      r0, r1                        ; r0 -> lcb
-         ldr      r1, [r0, #SMX_LCB_OFFS_FLAGS] ; test lsr->flags.umode
-         ands     r1, r1, #SMX_LCB_FLAGS_UMODE
+         mov      r0, r1                        ; r0 -> LCB
+         ldrb     lr, [r0, #SMX_LCB_OFFS_FLAGS] ; test lsr->flags.umode
+         tst      lr, #SMX_LCB_FLAGS_UMODE
          ite      eq
          ldreq    r1, =smx_SchedAutoStopLSR     ; r1 = lr if pmode
          ldrne    r1, =smxu_SchedAutoStopLSR    ; r1 = lr if umode
          ldr      r2, [r0]                      ; r2 = lsr function
          ldr      r3, =0x01000000               ; r3 = Thumb bit
-         add      r12, r12, #20
-         stmia    r12, {r1-r3}                  ; load lr, fun, and psp at sp+20
+         add      r0, r12, #20
+         stmia    r0, {r1-r3}                   ; load lr, fun, and psp at sp+20
                                                 ;   into exception frame
-         pop      {pc}
 
-smx_StartSafeLSR:
-         push     {lr}
-
-         ; save psp stack pointer
-         ldr      r1, =smx_psp_sav
-         mrs      r2, psp
-         str      r2, [r1]
-
-         ; make exception frame <9>
-         ldr      r1, =smx_clsr                 ; r1 = smx_clsr address
-         ldr      r1, [r1]                      ; r1 -> LCB
-         bl       smx_MakeFrameLSR
-
-         ; switch psp to LSR stack pointer
-         ldr      r2, [r0, #SMX_LCB_OFFS_SBP]   ; r0 ->LCB, r2 = lsr sbp
-         sub      r2, r2, #32                   ; r2 -> stack frame
-         msr      psp, r2 
-
-         ; test mode
-         ldr      r1, [r0, #SMX_LCB_OFFS_FLAGS] ; r1 = lsr flags
-         ands     r1, r1, #SMX_LCB_FLAGS_UMODE
+         ; run safe LSR
+         msr      psp, r12                      ; psp -> exception frame
+         tst      lr, #SMX_LCB_FLAGS_UMODE      ; test lsr->flags.umode
          bne      lsr1
 
-         ; pmode: BR = 1 and CONTROL = 0 
+         ; pmode: CONTROL = 0 
          mov      r1, #0
          msr      CONTROL, r1
          isb
-         b        lsr2
+         pop      {pc}
 
-lsr1:    ; umode: BR = SMX_CFG_MPU_BR_EN and CONTROL = 1
+lsr1:    ; umode: CONTROL = 1
         #if !SMX_CFG_MPU_BR_EN
          smx_MPU_BR_OFF
         #endif
          mov      r1, #1
          msr      CONTROL, r1
          isb
-lsr2:    pop      {pc}
+         pop      {pc}
 
-; smx_AutoStopLSR() for ARMM is called when a safe LSR returns from its last }.
-; smxu_LSRAutoStop() is called when a uLSR returns from its last }; it invokes 
-; svc LS, which switches the processor to handler mode and jumps to here via 
-; smx_sst[LS]. Calling of smx_ or smxu_ is determined by smx_MakeFrameLSR() in 
-; xarmm_iar.s. Defined here in assembly rather than in C in scheduler to avoid
-; a compiler code generation issue.
-
+; autostop for safe LSRs <1>
 smx_SchedAutoStopLSR:
-         bl       sb_TMLsr                      ; end of LSR time measurement
-         smx_RTC_LSR_END                        ; end of LSR runtime count
+         smx_RTC_LSR_END                        ; end of LSR runtime period
+        #if SMX_CFG_EVB
          ldr.n    r1, =smx_clsr
          ldr      r0, [r1]
-        #if SMX_CFG_EVB
          bl       smx_EVBLogLSRRet              ; log LSR return
         #endif
          ldr.n    r1, =smx_clsr
@@ -318,7 +301,7 @@ smx_MakeFrameDA:
          sub      r12, r12, #32                 ; reserve space on task stack
          msr      psp, r12                      ;   for DAF exception frame
          ldr      r1, =smx_RunDAF               ; r1 = &RunDAF
-         ldr      r2, =0x01000000               ; r2 = Thumb
+         ldr      r2, =0x01000000               ; r2 = Thumb bit
          add      r12, r12, #24
          stmia    r12!, {r1,r2}                 ; psp+24 -> fun, psp
          pop      {pc}                          ; return
@@ -412,19 +395,22 @@ rd2:     str      r0, [r2]
 smx_PendSV_Handler:
          smx_MPU_BR_ON              ; needed if sys_code not in MPU <2>
          sb_INT_DISABLE             ; for safety -- may not be necessary
+         push     {lr}              ; save EXC_RETURN
 
+       #if SMX_CFG_SSMX
          ; test for changed psp if smx_psp_sav != 0
          ldr      r1, =smx_psp_sav
          ldr      r0, [r1]          ; r0 = smx_psp_sav
          cbz      r0, psv0          ; <7>
          msr      psp, r0           ; restore psp
 
-psv0:    push     {lr}              ; save EXC_RETURN
+psv0:    
         #if SB_CFG_TM
-         push     {r0}              ; <7>
-         bl       sb_TMLsr          ; end of safe LSR time measurement (uLSR, pLSR)
+         push     {r0}
+         bl       sb_TMLsr          ; end of safe LSR time measurement
          pop      {r0}
         #endif
+       #endif
 
          ; call LSR scheduler if smx_lqctr > 0
          ldr      r3, =smx_lqctr
@@ -433,7 +419,7 @@ psv0:    push     {lr}              ; save EXC_RETURN
          sub      sp, sp, #4        ; 8-byte stack align for ATPCS (due to push lr)
          bl       smx_SchedRunLSRs  ; r0 = smx_psp_sav from above
          add      sp, sp, #4
-         cbz      r0, psv1          ; if tLSR continue
+         cbz      r0, psv1          ; continue if all LSRs done.
 
        #if SMX_CFG_SSMX
          ; run safe LSR via exception return
@@ -442,7 +428,7 @@ psv0:    push     {lr}              ; save EXC_RETURN
         #endif
          cpsid    f
          sb_INT_ENABLE
-         pop      {pc}  
+         pop      {pc}              ; <1>
 
          ; test smx_ct->flags.da_enter for deferred action function
 psv1:    ldr      lr, =smx_ct
@@ -470,7 +456,7 @@ psv1d:   tst      r12, #SMX_TCB_FLAGS_DA_EXIT
          and      r12, r12, #~SMX_TCB_FLAGS_DA_EXIT ; clear smx_ct->flags.da_exit
          str      r12, [lr, #SMX_TCB_OFFS_FLAGS]
 
-         /* adjust psp <14> to original value */
+         /* adjust psp <10> to original value */
          mrs      r1, psp
          add      r1, r1, #32
          msr      psp, r1
@@ -488,7 +474,7 @@ psv1c:   ldr      r3, =smx_sched
          tst      r2, #SMX_CT_DELETE
          bne      psv2a             ; smx_sched = DELETE
         #if SMX_CFG_SSMX
-         cbz      r2, psv1a         ; smx_sched = 0 
+         cbz      r2, psv1a         ; smx_sched = NOP 
         #else
          cbz      r2, psv3          ; bypass task scheduler
         #endif
@@ -510,7 +496,7 @@ psv1c:   ldr      r3, =smx_sched
          ; reload MPU if it was changed by a safe LSR <8>
 psv1a:   ldr      r1, =smx_psp_sav
          ldr      r0, [r1]          ; r0 = smx_psp_sav
-         cbz      r0, psv3          ; bypass task scheduler
+         cbz      r0, psv3          ; skip MPULoad & bypass task sched
          mov      r2, #0
          str      r2, [r1]          ; clear smx_psp_sav
          bl       mp_MPULoad
@@ -594,7 +580,7 @@ psv3d:   ; end of task scheduler bypass for deferred action function
          bne      psv4a
 
          ; return to pmode
-         smx_MPU_BR_OFF                         ; BR OFF for pmode <13>
+         smx_MPU_BR_OFF                         ; BR OFF for pmode <12>
          mov      r1, #0
          msr      CONTROL, r1                   ; ms, pmode
          isb
@@ -611,7 +597,7 @@ psv4a:   tst      r1, #SMX_TCB_FLAGS_DA_RUN
 
 psv4b:   ; return to umode
         #if !SMX_CFG_MPU_BR_EN
-         smx_MPU_BR_OFF                         ; BR OFF for umode <12>
+         smx_MPU_BR_OFF                         ; BR OFF for umode <13>
         #endif
          mov      r1, #1
          msr      CONTROL, r1                   ; ms, umode
@@ -646,7 +632,7 @@ smx_SVC_Handler:
          add      r1, r1, #1
          str      r1, [r0]
         #endif
-         ; get n from svc n in exception frame
+         ; get n from svc n in exception frame on task stack
          mrs      r0, psp        ; r0 -> ex frame
          ldr      r2, [r0, #24]
          ldrh     r2, [r2, #-2]  ; r2 = svc n
@@ -821,40 +807,48 @@ ufh1:
         END
 
 ; Notes:
-;  1. Necessary if smx_PreSched() entered due to smx_lqctr > 0.
+;  1. When a safe LSR runs through its last } smx_SchedAutoStopLSR() is called 
+;     if in pmode (pLSR), or smxu_SchedAutoStopLSR() is called if in umode 
+;     (uLSR). This is determined by the exception frame used to run the LSR.
+;     smxu_SchedAutoStopLSR() invokes svc LS, which calls smx_SchedAutoStopLSR()
+;     via smx_sst[LS]. It triggers PSVH(), so control returns to PSVH() top, 
+;     where psp is restored to the value before the sLSR ran and time 
+;     measurement for the sLSR is recorded.
 ;  2. An LSR runs in the context of the task that was running when the ISR
-;    interrupted, which could be any task, so data accessed by the LSR is
-;    likely not to be accessible by the regions in that task's MPA. See
-;    note 5 in xarmm.h about this problem for the ISR itself.
+;     interrupted, which could be any task, so data accessed by the LSR is
+;     likely not to be accessible by the regions in that task's MPA. See
+;     note 5 in xarmm.h about this problem for the ISR itself.
 ;  3. SVC_Handler must not be called when the processor is in handler mode.
-;    This is true for exceptions and interrupts, as well as LSRs and the
-;    scheduler, which run from the PendSV handler. These must not make SVC
-;    calls nor call functions that do. They must not follow #include "xapiu.h".
-;    This can cause strange behavior on the processor, and also SVC_Handler
-;    expects that the stack frame is on the process stack not the main stack.
+;     This is true for exceptions and interrupts, as well as LSRs and the
+;     scheduler, which run from the PendSV handler. These must not make SVC
+;     calls nor call functions that do. They must not follow #include "xapiu.h".
+;     This can cause strange behavior on the processor, and also SVC_Handler
+;     expects that the stack frame is on the process stack not the main stack.
 ;  4. Volatile registers must be loaded from the stack frame because the SVC
-;    handler could be interrupted by a higher-priority exception which might
-;    change them.
+;     handler could be interrupted by a higher-priority exception which might
+;     change them.
 ;  5. ct does not actually wait prior to function return, so it is ok to save
-;    susploc after the service return.
+;     susploc after the service return.
 ;  6. If n is invalid, it may be because the exception frame was saved on the
-;    main stack due to using SVC from handler mode rather than thread mode,
-;    which is not permitted (see 3). Return from SVC_Handler to see what
-;    function made the call. Use #include "xapip.h" ahead of ISRs, LSRs,
-;    and other privileged code.
-;  7. r0 != 0 means that a uLSR or pLSR ran last.
-;    r0 == 0 means that a tLSR ran last.
+;     main stack due to using SVC from handler mode rather than thread mode,
+;     which is not permitted (see 3). Return from SVC_Handler to see what
+;     function made the call. Use #include "xapip.h" ahead of ISRs, LSRs,
+;     and other privileged code.
+;  7. If r0 != 0 a uLSR or pLSR ran last. If r0 == 0 means a tLSR ran last.
 ;  8. If a uLSR or a pLSR ran last and smx_ct is continuing, its MPA must be
-;    reloaded into the MPU. 
-;  9. Necessary because the exception frame PC is changed by the PendSV exception
-;    following the last run of this LSR.
-;  10. For safe LSRs, smx_SchedAutoStopLSR() does not restore r4 because the 
-;    PendSV exception prevents its epilogue from running.
-;  11. Necessary for a call via SVCH() which caused smx_ct to be suspended. The
-;    value in smx_ct->rv has been overwritten by the SSR causing smx_ct to be
-;    resumed. For a call not via SVCH(), when smx_ct resumes, it executes the
-;    tail of smx_SSRExit(), which calls GetCTRV() to do the same thing as here.
-;  12. Possible only if sys_code and sys_data are in MPU. Otherwise, BR must be
-;      on to process interrupts.
-;  13. Hard Fault here: probably sys_code region omitted from ct's MPA.
-;  14. psp-> new ex frame made during transisition to PSVH() from RunDAF().
+;     reloaded into the MPU. 
+;  9. The stack frame must be reloaded each time because following an exception
+;     psp ends up at the top of it, thus it is overwritten by the LSR.
+; 10. psp-> new ex frame made during transisition to PSVH() from RunDAF().
+; 11. When ct is suspended via a direct call to an SSR and then is resumed by
+;     another SSR, it returns to smx_SSRExit(), which calls GetCTRV() to 
+;     return task->rv. But when ct is suspended by an SSR call via SVCH() and  
+;     then is resumed, it does not return to smx_SSRExit(), but rather to the 
+;     point of call via a PSVH() exception return. To deal with this,  
+;     ct->flags.rv_ro is set in the SSRs causing ct to suspend. Then, when
+;     ct resumes, if ct->flags.rv_ro is set, the PSVH() tail loads
+;     ct->rv into the r0 position of the exception frame created by the SVC 
+;     exception. Thus the PSVH() exception return, returns task->rv.
+; 12. Hard Fault here: Probably sys_code region omitted from ct's MPA.
+; 13. Assumes that sys_code and sys_data are in MPU. Otherwise, BR must be
+;     on to process interrupts and exceptions.

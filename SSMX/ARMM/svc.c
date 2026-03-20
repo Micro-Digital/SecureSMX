@@ -1,5 +1,5 @@
 /*
-* svc.c                                                     Version 6.0.0
+* svc.c                                                     Version 6.1.0
 *
 * ARMM SVC system call shell functions. These are all system calls permitted
 * from umode. Some have built-in restrictions. For better security, all unused
@@ -72,10 +72,13 @@ enum ssndx {LIM, AS, ASL, BG, BM, BP, BR, BRA, BU, BPC, BPD, BPP,
            #endif
             IRQC, IRQM, IRQU, PK, PTMG,
             MO, MPAC, MPACL, MPASM, 
-           #if SMX_CFG_PORTAL
-            FPC, FPO, FPR, FPS, FTPS, POEM, POL, POR, TPC,
-            DTPO, DTPR, DTPS,
+          #if SMX_CFG_PORTAL
+            FPC, FPO, FPR, FPS, FTPS, POEM,
+           #if SMX_CFG_EVB 
+            POL, POR,
            #endif
+            TPC, DTPO, DTPR, DTPS,
+          #endif
            #if defined(MW_FATFS) && defined(SB_CPU_STM32)
             BSP_SDI,
            #endif
@@ -230,20 +233,22 @@ u32 smx_sst[] = {
    (u32)mp_MPACreate,
    (u32)mp_MPACreateLSR,
    (u32)mp_MPASlotMove,
-  #if SMX_CFG_PORTAL
+ #if SMX_CFG_PORTAL
    (u32)mp_FPortalClose,
    (u32)mp_FPortalOpen,
    (u32)mp_FPortalReceive,
    (u32)mp_FPortalSend,
    (u32)mp_FTPortalSend,
    (u32)mp_PortalEM,
-   (u32)mp_PortalLog,
+  #if SMX_CFG_EVB
+   (u32)mp_PortalLog, 
    (u32)mp_PortalRet,
+  #endif
    (u32)mp_TPortalClose,
    (u32)mp_SetDAF,
    (u32)mp_SetDAF,
    (u32)mp_SetDAF,
-  #endif
+ #endif
   #if defined(MW_FATFS) && defined(SB_CPU_STM32)
    (u32)BSP_SD_Init,
   #endif
@@ -1014,6 +1019,7 @@ NI void mpu_PortalEM(PS* ph, PERRNO errno, PERRNO* ep)
    sb_SVC(POEM)
 }
 
+#if SMX_CFG_EVB
 NI void mpu_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6)
 {
    sb_SVCG4(POL)
@@ -1023,6 +1029,7 @@ NI void mpu_PortalRet(u32 id, u32 rv)
 {
    sb_SVC(POR)
 }
+#endif
 
 NI bool mpu_TPortalClose(TPCS* pch)
 {
@@ -1062,6 +1069,7 @@ NI void smxu_EM(SMX_ERRNO errno, u8 sev)
 /* set deferred action function */
 void mp_SetDAF(u32 n)
 {
+  #if SMX_CFG_PORTAL
    switch (n)
    {
       case DTPO:
@@ -1076,6 +1084,7 @@ void mp_SetDAF(u32 n)
    }
    smx_ct->flags.da_enter = 1;
    smx_PENDSVH();          /* trigger PSVH */
+  #endif
 }
 
 /* 

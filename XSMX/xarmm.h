@@ -1,5 +1,5 @@
 /*
-* xarmm.h                                                   Version 6.0.0
+* xarmm.h                                                   Version 6.1.0
 *
 * ARMM (e.g. Cortex-M) definitions and macros, including C scheduler
 * macros. The smx Porting Guide documents these macros.
@@ -54,7 +54,7 @@ void     smx_PBlockRelSlot(u8 sn);
 bool     smx_TaskOpPermit(TCB_PTR task);
 #endif
 
-#if SMX_CFG_SSMX && SMX_CFG_MPU_ENABLE
+#if SMX_CFG_MPU_ENABLE
 #define  smx_MPU_BR_OFF()         smx_BROff();
 #define  smx_MPU_BR_ON()          smx_BROn();
 #define  smx_MPU_BR_RESTORE_OFF() smx_BRRestoreOff();

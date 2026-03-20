@@ -1,5 +1,5 @@
 /*
-* portl.h                                                   Version 6.0.0
+* portl.h                                                   Version 6.1.0
 *
 * Portal definitions.
 *
@@ -323,20 +323,20 @@ void  mp_PortalRet(u32 id, u32 rv);
 *===========================================================================*/
 
 /* Non-SVC IDs (>= 0x100). See xdef.h for ID format. */
-#define  MP_ID_FPORTAL_CLOSE              0x02002100
-#define  MP_ID_FPORTAL_CREATE             0x02006101
-#define  MP_ID_FPORTAL_DELETE             0x02004102
-#define  MP_ID_FPORTAL_OPEN               0x02006103
-#define  MP_ID_FPORTAL_RECEIVE            0x02002104
-#define  MP_ID_FPORTAL_SEND               0x02002105
-#define  MP_ID_FTPORTAL_SEND              0x02003106
-#define  MP_ID_TPORTAL_CLOSE              0x02001107
-#define  MP_ID_TPORTAL_CREATE             0x02006108
-#define  MP_ID_TPORTAL_DELETE             0x02003109
-#define  MP_ID_TPORTAL_OPEN               0x0200610A
-#define  MP_ID_TPORTAL_RECEIVE            0x0200410B
-#define  MP_ID_TPORTAL_SEND               0x0200410C
-#define  MP_ID_TPORTAL_SERVER             0x0200210D  /*<3>*/
+#define MP_ID_FPORTAL_CLOSE               0x02002100
+#define MP_ID_FPORTAL_CREATE              0x02006101
+#define MP_ID_FPORTAL_DELETE              0x02004102
+#define MP_ID_FPORTAL_OPEN                0x02006103
+#define MP_ID_FPORTAL_RECEIVE             0x02002104
+#define MP_ID_FPORTAL_SEND                0x02002105
+#define MP_ID_FTPORTAL_SEND               0x02003106
+#define MP_ID_TPORTAL_CLOSE               0x02001107
+#define MP_ID_TPORTAL_CREATE              0x02006108
+#define MP_ID_TPORTAL_DELETE              0x02003109
+#define MP_ID_TPORTAL_OPEN                0x0200610A
+#define MP_ID_TPORTAL_RECEIVE             0x0200410B
+#define MP_ID_TPORTAL_SEND                0x0200410C
+#define MP_ID_TPORTAL_SERVER              0x0200210D  /*<3>*/
 
 /* EVB portal EVB logging macros */
 #define mp_EVB_LOG_PORTAL_ERROR(errno, task, ph) \
@@ -357,22 +357,35 @@ void  mp_PortalRet(u32 id, u32 rv);
       } \
    }
 
-#define  mp_PORTAL_LOG0(id) \
+#define mp_PORTAL_LOG0(id) \
                   mp_PortalLog(id, 0, 0, 0, 0, 0, 0)
-#define  mp_PORTAL_LOG1(id, p1) \
+#define mp_PORTAL_LOG1(id, p1) \
                   mp_PortalLog(id, (u32)p1, 0, 0, 0, 0, 0)
-#define  mp_PORTAL_LOG2(id, p1, p2) \
+#define mp_PORTAL_LOG2(id, p1, p2) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, 0, 0, 0, 0)
-#define  mp_PORTAL_LOG3(id, p1, p2, p3) \
+#define mp_PORTAL_LOG3(id, p1, p2, p3) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, 0, 0, 0)
-#define  mp_PORTAL_LOG4(id, p1, p2, p3, p4) \
+#define mp_PORTAL_LOG4(id, p1, p2, p3, p4) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, (u32)p4, 0, 0)
-#define  mp_PORTAL_LOG5(id, p1, p2, p3, p4, p5) \
+#define mp_PORTAL_LOG5(id, p1, p2, p3, p4, p5) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, (u32)p4, (u32)p5, 0)
-#define  mp_PORTAL_LOG6(id, p1, p2, p3, p4, p5, p6) \
+#define mp_PORTAL_LOG6(id, p1, p2, p3, p4, p5, p6) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, (u32)p4, (u32)p5, (u32)p6)
-#define  mp_PORTAL_RET(id, rv) \
+#define mp_PORTAL_RET(id, rv) \
                   mp_PortalRet(id, rv)
+
+#else
+
+#define mp_EVB_LOG_PORTAL_ERROR(errno, task, ph)
+#define mp_PORTAL_LOG0(id)
+#define mp_PORTAL_LOG1(id, p1) 
+#define mp_PORTAL_LOG2(id, p1, p2) 
+#define mp_PORTAL_LOG3(id, p1, p2, p3) 
+#define mp_PORTAL_LOG4(id, p1, p2, p3, p4) 
+#define mp_PORTAL_LOG5(id, p1, p2, p3, p4, p5) 
+#define mp_PORTAL_LOG6(id, p1, p2, p3, p4, p5, p6) 
+#define mp_PORTAL_RET(id, rv)
+ 
 #endif /* SMX_CFG_EVB */
 
 /*

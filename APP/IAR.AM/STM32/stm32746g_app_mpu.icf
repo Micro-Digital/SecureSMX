@@ -1,5 +1,5 @@
 //****************************************************************************
-// stm32746g_app_mpu.icf                                    Version 6.0.0
+// stm32746g_app_mpu.icf                                    Version 6.1.0
 //
 // ILINK linker command file for STMicro STM32746G-EVAL and STM32746G-DISCOVERY
 // boards and SecureSMX (MPU).
@@ -119,11 +119,11 @@ define block fpd_data with size = fpddsz*5/8, alignment = fpddsz
 /* system regions (pmode) */
 define block sys_code with fixed order, size = scsz*8/8, alignment = scsz
                 {block ucom_code, ro section .intvec, ro section .sys.text, 
-                 ro section .sys.rodata, block cp_code, block fs_code}; /*<3>*/
+                 ro section .sys.rodata, block cp_code}; /*<3>*/
 define block sys_data with fixed order, size = sdsz*6/8, alignment = sdsz 
                 {block CSTACK, block EVT, block EB, rw section .sys.bss, 
                  rw section .sys.data, rw section .sys.noinit, block mheap, 
-                 block ucom_data, block cp_data, block fs_data}; /*<6>*/
+                 block ucom_data, block cp_data}; /*<6>*/
 
 /* initialization */
 initialize by copy with packing = zeros {rw};
@@ -142,10 +142,10 @@ define block pb1_data with size = pb1dsz, alignment = 4  {rw section .pb1.bss,
 
 /* collection blocks for MpuPacker optimization (MPUPACKER:COLL) <5> */
 define block rom_block with fixed order, size = romsz*2/8, alignment = romsz
-                        {block sys_code, block lcd_code, block fpu_code, 
+                        {block sys_code, block fs_code, block lcd_code, block fpu_code, 
                          block led_code, block fpd_code}; 
 define block sram_block with fixed order, size = sramsz*4/8, alignment = sdsz
-                        {block sys_data, block lcd_data, block fpu_data, 
+                        {block sys_data, block fs_data, block lcd_data, block fpu_data, 
                          block fpd_data}; 
 define block ram_block with fixed order, size = ramsz*8/8, alignment = ramsz
                         {block EVB, block LCD_BUF};

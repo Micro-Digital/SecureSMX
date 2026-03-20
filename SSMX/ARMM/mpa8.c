@@ -1,5 +1,5 @@
 /*
-* mpa8.c                                                    Version 6.0.0
+* mpa8.c                                                    Version 6.1.0
 *
 * MPA ARMM8 templates for NXP LPC55Sxx processors.
 *
@@ -39,9 +39,7 @@
                                  PMODE TEMPLATES
 *===========================================================================*/
 
-/* Default MPA template assigned when a task is created. Allows access to all 
-   MPU regions. <1> */
-MPA mpa_dflt = 
+MPA mpa_dflt = /* default MPA must show all active regions <1> */
 {
    RGN(0, RA("rom_block") | PCODE,   RLA("rom_block") | AI(0) | EN, "rom_block"),
    RGN(1, RA("sram_block")| PDATARW, RLA("sram_block")| AI(0) | EN, "sram_block"),

@@ -1,5 +1,5 @@
 /*
-* xglob.c                                                   Version 6.0.0
+* xglob.c                                                   Version 6.1.0
 *
 * smx globals
 *
@@ -31,6 +31,7 @@
 FUNV_PTR       smx_autostop;           /* autostop function address */
 PCB            smx_bcbs;               /* BCB pool */
 LCB_PTR        smx_clsr;               /* current LSR */
+u32*           smx_cmpap;              /* current MPA pointer */
 TCB_PTR        smx_ct = (TCB_PTR)&smx_dtcb; /* current task */
 bool           smx_ctstart;            /* current task start */
 #if defined(SMX_DEBUG)
@@ -70,7 +71,9 @@ u32            smx_lockctr;            /* scheduler lock nesting counter */
 LQC_PTR        smx_lqi;                /* pointer to beginning of LSR queue */
 LQC_PTR        smx_lqx;                /* pointer to end of LSR queue */
 u32            smx_lqctr;              /* number of LSRs in lq */
+#if SMX_CFG_DIAG
 u32            smx_lqhwm;              /* LSR queue high water mark */
+#endif
 LQC_PTR        smx_lqin;               /* pointer to next free position in lq */
 LQC_PTR        smx_lqout;              /* pointer to next LSR to run */
 PCB            smx_mcbs;               /* MCB pool */

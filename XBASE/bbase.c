@@ -1,5 +1,5 @@
 /*
-* bbase.c                                                   Version 6.0.0
+* bbase.c                                                   Version 6.1.0
 *
 * smxBase Functions.
 *
@@ -36,18 +36,17 @@
 u8*         sb_isp;           /* interrupt stack pointer */
 
 #if SB_CFG_TM
-u32         sb_te[4];         /* ending times for time measurements */
+u32         sb_te[5];         /* ending times for time measurements */
 u32         sb_ts1;           /* starting time for time measurement 1 */
 u32         sb_ts2;           /* starting time for time measurement 2 */
+u32         sb_tltsel;        /* tLSR & pLSR type selector for sb_TMLsr() */
 u32         sb_TMCal;         /* TM calibration for pmode */
 u32         sb_TMs;
-u32         sb_tltsel = 0;    /* LSR type selector for sb_TMLsr() */
 #if SMX_CFG_SSMX
-/*............................. SECTION CHANGE .............................*/
 #pragma default_variable_attributes = @ ".ucom.bss"
+u32         sbu_tltsel;       /* uLSR type selector for sb_TMLsr() */
 u32         sbu_TMCal;        /* TM calibration for umode */
 u32         sbu_TMs;
-/*............................. SECTION CHANGE .............................*/
 #pragma default_variable_attributes =
 #endif /* SMX_CFG_SSMX */
 #endif /* SB_CFG_TM */
@@ -476,6 +475,14 @@ void sb_TMEnd(u32 ts, u32* ptm)
 /* Time measurement for tLSR, pLSR, and uLSR */
 void sb_TMLsr(void)
 {
+  #if SMX_CFG_SSMX
+   if (sbu_tltsel)
+   {
+      sb_tltsel = sbu_tltsel;
+      sbu_tltsel = 0;
+   }
+  #endif
+
    switch (sb_tltsel)
    {
       case 1:
@@ -484,9 +491,10 @@ void sb_TMLsr(void)
       case 2:
          sb_TMEnd(sb_ts1, &sb_te[1]); /* sb_te[1] = pLSR time */
          break;
-      default:
+      case 3:
          sb_TMEnd(sb_ts1, &sb_te[2]); /* sb_te[2] = uLSR time */
    }
+   sb_tltsel = 0;
 }
 #endif /* SB_CFG_TM */
 

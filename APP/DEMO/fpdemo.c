@@ -1,5 +1,5 @@
 /*
-* fpdemo.c                                                  Version 6.0.0
+* fpdemo.c                                                  Version 6.1.0
 *
 * File portal demo for FatFs.
 *
@@ -57,7 +57,7 @@ extern   FATFS   SDFatFs;  /* file system struct for SD card logical drive */
 #define  FPD_PCH     &fpcli_fpd  /* client portal struct pointer for fp calls */
 #define  FPDEMO_DLY  1000        /* msec between runs */
 #define  FILENAME    "0:\\fpdemo.txt"  /* file name */
-#if SMX_CFG_SSMX
+#if FP_PORTAL
 #define  FILESZ      (4*PM_BUFSZ)/* file size, must be multiple of PM_BUFSZ */
 #else
 #define  FILESZ      (4096)      /* file size */
@@ -67,7 +67,7 @@ extern   FATFS   SDFatFs;  /* file system struct for SD card logical drive */
 #define  TOP_LINE    2           /* top line of fpdemo display */
 
 /* variables */
-#if SMX_CFG_SSMX
+#if FP_PORTAL
 FPCS     cpcli_fpd;        /* console portal client structure for fpdemo */
 TPCS     fpcli_fpd;        /* file portal client structure for fpdemo */
 FIL*     fop;              /* file struct pointer */
@@ -89,7 +89,7 @@ u32      wtext[FILESZ/4];  /* output buffer */
 
 void fpdemo_main(u32)
 {
-  #if SMX_CFG_SSMX
+  #if FP_PORTAL
    /* open console portal for fpdemo */
    mp_FPortalOpen(&cpcli_fpd, CP_CSLOT, 80, 1, 5, "fpd_rxchg");
    sb_ConWriteString(0,TOP_LINE, SB_CLR_LIGHTMAGENTA,SB_CLR_BLACK,!SB_CON_BLINK,"FPDEMO: ");
@@ -101,7 +101,7 @@ void fpdemo_main(u32)
 
    /* SD controller and card init */
   #if defined(SB_CPU_STM32)
-  #if SMX_CFG_SSMX
+  #if SMX_CFG_SSMX && SMX_CFG_MPU_ENABLE
    while (sbu_BSP_SD_Init() != MSD_OK)
   #else
    while (BSP_SD_Init() != MSD_OK)
@@ -118,7 +118,7 @@ void fpdemo_main(u32)
 
    while (!fpdexit)
    {
-     #if SMX_CFG_SSMX
+     #if FP_PORTAL
       /* open file system portal for fpdemo */
       mp_TPortalOpen(&fpcli_fpd, PM_BLKSZ, PM_THDRSZ, FP_CTMO, "ssem", "csem");
      #endif
@@ -126,14 +126,14 @@ void fpdemo_main(u32)
       /* run fpdemo */
       fpdemo_perf();
 
-     #if SMX_CFG_SSMX
+     #if FP_PORTAL
       /* close file system portal */
       mp_TPortalClose(&fpcli_fpd);
       smx_DelayMsec(FPDEMO_DLY);
      #endif
    }
 
-  #if SMX_CFG_SSMX
+  #if FP_PORTAL
    /* end demo */
    smx_PMsgRel(&fpcli_fpd.pmsg, 0);
    fpcli_fpd.mhp = NULL;
@@ -168,7 +168,7 @@ void fpdemo_perf(void)
       }
 
       /* create and open a new file with write access */
-     #if SMX_CFG_SSMX
+     #if FP_PORTAL
       if (f_open(&fop, FILENAME, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
      #else
       if (f_open(fop, FILENAME, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
@@ -179,12 +179,12 @@ void fpdemo_perf(void)
       }
 
       /* write data to the new file and measure time */
-      sb_TMStart(&fpdtms);
+      sb_TM_START(&fpdtms);
       res = f_write(fop, wtext, sizeof(wtext), &bwr);
-     #if SMX_CFG_SSMX
-      sbu_TMEnd(fpdtms, &fpdwtm, fpdctm);
+     #if SMX_CFG_SSMX && SMX_CFG_MPU_ENABLE
+      sbu_TM_END3(fpdtms, &fpdwtm, fpdctm);
      #else
-      sb_TMEnd(fpdtms, &fpdwtm);
+      sb_TM_END(fpdtms, &fpdwtm);
      #endif
       f_close(fop);
 
@@ -195,7 +195,7 @@ void fpdemo_perf(void)
       }
 
       /* open same file with read access */
-     #if SMX_CFG_SSMX
+     #if FP_PORTAL
       if (f_open(&fop, FILENAME, FA_READ) != FR_OK)
      #else
       if (f_open(fop, FILENAME, FA_READ) != FR_OK)
@@ -213,12 +213,12 @@ void fpdemo_perf(void)
       }
 
       /* Read data from the text file and measure time */
-      sb_TMStart(&fpdtms);
+      sb_TM_START(&fpdtms);
       res = f_read(fop, rtext, sizeof(rtext), &bwr);
-     #if SMX_CFG_SSMX
-      sbu_TMEnd(fpdtms, &fpdrtm, fpdctm);
+     #if SMX_CFG_SSMX && SMX_CFG_MPU_ENABLE
+      sbu_TM_END3(fpdtms, &fpdrtm, fpdctm);
      #else
-      sb_TMEnd(fpdtms, &fpdrtm);
+      sb_TM_END(fpdtms, &fpdrtm);
      #endif
       f_close(fop);
       passcnt++;
@@ -360,7 +360,9 @@ void fpdemo_init(void)
       smx_TaskStart(fpdemo);
    }
    fpddone = smx_SemCreate(SMX_SEM_THRES, 1, "fpdemo done");
+  #if SB_CFG_TM
    fpdctm = sb_TMCal;
+  #endif
 }
 
 void fpdemo_exit(void)

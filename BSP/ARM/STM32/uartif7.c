@@ -1,5 +1,5 @@
 /*
-* uartif7.c                                                 Version 6.0.0
+* uartif7.c                                                 Version 6.1.0
 *
 * UART Interrupt-Driven Low-Level Driver Functions for STM32 Processor with
 * HAL library.
@@ -86,7 +86,7 @@ void sb_UartInit(u32 parity, u32 dbit, u32 sbit)
 void sb_UartOpen(u32 parity, u32 dbit, u32 sbit)
 {
    /* allocate huart structure */
-  #if SMX_CFG_SSMX
+  #if SMX_CFG_PORTAL
    huart = (UART_HandleTypeDef*)smx_HeapMalloc(sizeof(UART_HandleTypeDef), 1, cp_hn);
   #else
    huart = (UART_HandleTypeDef*)smx_HeapMalloc(sizeof(UART_HandleTypeDef));

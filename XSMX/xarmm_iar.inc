@@ -1,5 +1,5 @@
 ;
-; xarmm_iar.inc  (IAR version)                              Version 6.0.0
+; xarmm_iar.inc  (IAR version)                              Version 6.1.0
 ;
 ; smx Definitions, Globals, and Macros for ARM-M assembly files.
 ; Minimal subset of the definitions in C header files.
@@ -30,7 +30,7 @@
 #include "barmm_iar.inc"
 
 SMX                     EQU   1
-SMX_VERSION             EQU   0x0600  ; Change xdef.h and string in scheduler too.
+SMX_VERSION             EQU   0x0610  ; Change xdef.h and string in scheduler too.
 
 ;============================================================================;
 ;                             SMX CONFIGURATION                              ;
@@ -64,9 +64,9 @@ SMX_CFG_RTLIM           EQU   0
 SMX_CT_DELETE           EQU   0x100
 SMX_CT_STOP             EQU   0x80
 
-SMX_LCB_OFFS_FLAGS      EQU    8     ; actually byte 9 but flag values skip low byte (cbtype)
+SMX_LCB_OFFS_FLAGS      EQU    9
 SMX_LCB_OFFS_SBP        EQU   24
-SMX_LCB_FLAGS_UMODE     EQU   0x0200 ; byte 1 flags, byte 0 cbtype
+SMX_LCB_FLAGS_UMODE     EQU   0x02
 
 SMX_TCB_OFFS_EXRET      EQU   19
 SMX_TCB_OFFS_FLAGS      EQU   20
@@ -103,7 +103,7 @@ MP_MPU_STATSZ           EQU   0
 ;                                   MACROS                                   ;
 ;============================================================================;
 
-#if SMX_CFG_SSMX && SMX_CFG_MPU_ENABLE
+#if SMX_CFG_MPU_ENABLE
 smx_MPU_BR_ON: MACRO
          MOVS     R0,#5
          LDR.N    R1,=ARMM_MPU_CTRL
