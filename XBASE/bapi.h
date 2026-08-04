@@ -1,5 +1,5 @@
 /*
-* bapi.h                                                    Version 6.1.0
+* bapi.h                                                    Version 6.2.0
 *
 * smxBase API.
 *
@@ -35,17 +35,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if defined(SMXAWARE)
-bool     smxaware_init(void);
-void     sa_PrintInit(void);
-void     sa_Print(const char* string);
-void     sa_PrintVals(const char* s, long val1, long val2);
-#else
-#define  sa_PrintInit()
-#define  sa_Print(x)
-#define  sa_PrintVals(x, y, z)
 #endif
 
 bool     sb_BlockPoolCreate(u8* p, PCB_PTR pool, u16 num, u16 size,
@@ -121,6 +110,29 @@ void     sb_TMLsr(void);
 bool     sb_UFM(void);
 void     sb_write32_unaligned(u8* addr, u32 val);
 
+#if defined(SMXAWARE)
+bool     smxaware_init(void);
+#ifdef SMXFS
+void     smxaware_smxfs_init(void);
+#endif
+#ifdef SMXNS
+void     smxaware_smxns_init(void);
+#endif
+#ifdef SMXUSBD
+void     smxaware_smxusbd_init(void);
+#endif
+#ifdef SMXUSBH
+void     smxaware_smxusbh_init(void);
+#endif
+void     sa_PrintInit(void);
+void     sa_Print(const char* string);
+void     sa_PrintVals(const char* s, long val1, long val2);
+#else
+#define  sa_PrintInit()
+#define  sa_Print(x)
+#define  sa_PrintVals(x, y, z)
+#endif /* SMXAWARE */
+
 #ifdef __cplusplus
 }
 #endif
@@ -142,6 +154,7 @@ void     sb_write32_unaligned(u8* addr, u32 val);
          }
 
 /* utility macros */
+#define  sb_BYTES_TO_CHARS(size)     (size)
 #define  sb_BCD_BYTE_TO_DECIMAL(num) (((num) & 0x0F) + ((((num) & 0xF0)>>4) * 10))
 #define  sb_DECIMAL_TO_BCD_BYTE(num) (((((num)%100)/10)<<4) | ((num)%10))   /* max 99; higher values truncated (e.g. 100 --> 00) */
 #define  sb_INVERT_U16(v16)          (u16)(((uint)((v16) & 0x00FF) << 8) | ((uint)((v16) & 0xFF00) >> 8))
@@ -205,6 +218,7 @@ int      sb_IRQToInt(int irq_num);
 ISR_PTR  sb_IRQVectGet(int irq_num, u32* extra_info);
 bool     sb_IRQVectSet(int irq_num, ISR_PTR isr_ptr);
 bool     sb_ISRInstall(int irq_num, uint par, ISRC_PTR fun, const char* name);
+bool     sb_ISRRestore(int irq_num);
 
 #define  sb_INT_DISABLE_S(s)  s = sb_IntStateSaveDisable()
 #define  sb_INT_ENABLE_R(s)   sb_IntStateRestore(s)
@@ -252,13 +266,6 @@ void     sb_UartInit(u8 port, u32 baudrate);
 
 void     sb_UartOpen(u32 parity, u32 dbit, u32 sbit);
 void     sb_UartOutData(u8 *psrc, u32 len);
-
-/* Missing C library functions -- see bbase.c */
-char*    itoa(int val, char *str, int radix);
-char*    ltoa(long val, char *str, int radix);
-int      putchar(int c);
-void     reverse(char* s);
-char*    ultoa(unsigned long val, char *str, int radix);
 
 #ifdef __cplusplus
 }

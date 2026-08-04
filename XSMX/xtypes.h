@@ -1,5 +1,5 @@
 /*
-* xtypes.h                                                  Version 6.0.0
+* xtypes.h                                                  Version 6.2.0
 *
 * smx Data Types
 *
@@ -118,11 +118,15 @@ typedef struct LCB {       /* LSR CONTROL BLOCK */
    FUN_PTR     fun;           /* +00 LSR function pointer */
    LCB_PTR*    lhp;           /* +04 LSR handle pointer */
    SMX_CBTYPE  cbtype;        /* +08 control block type */
-   struct {                   /* +09 flags */
-      u8       trust : 1;        /* trusted LSR */
-      u8       umode : 1;        /* run LSR in umode */
-      u8       nolog : 1;        /* don't log in EVB */
-   } flags;
+   union {
+      struct {                   
+         u8       trust : 1;     /* run LSR in hmode */
+         u8       pmode : 1;     /* run LSR in pmode */
+         u8       umode : 1;     /* run LSR in umode */
+         u8       nolog : 1;     /* don't log in EVB */
+      } mode;
+      u8 load;
+   }           flags;         /* +09 flags */
    SMX_ERRNO   err;           /* +10 last error for this LSR */
 #if SMX_CFG_SSMX
    u8          mpasz;         /* +11 MPA size */

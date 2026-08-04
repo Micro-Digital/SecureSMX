@@ -671,7 +671,7 @@ bool smx_PMsgSend(MCB_PTR pmsg, XCB_PTR xchg, u8 pri, void* reply)
             {
                pmsg->host = NULL; /*<5>*/
 
-               if (pmsg->con.bnd && xchg->flags.pi) /*<7>*/
+               if (pmsg->con.bnd && xchg->flags.pi && xchg->onr) /*<7>*/
                   pmsg->onr->pri = xchg->onr->pri;
             }
          }

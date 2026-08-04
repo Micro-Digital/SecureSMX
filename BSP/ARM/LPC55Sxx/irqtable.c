@@ -1,5 +1,5 @@
 /*
-* irqtable.c                                                Version 6.0.0
+* irqtable.c                                                Version 6.2.0
 *
 * sb_irq_table[] for NXP LPC55Sxx. Normally in bsp.c, but here in BSP dir since
 * all ARM-M share the same bsp.c.
@@ -135,4 +135,29 @@ const IRQ_PERM sb_irq_perm_uart[] = {
 };
 #endif
 
+#if defined(SMXFS)
+const IRQ_PERM sb_irq_perm_fs[] = {
+// {14, 14},      /* USART0 for terminal output */
+   {42, 42},      /* SDIO */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
+
+#if defined(SMXUSBD)
+const IRQ_PERM sb_irq_perm_usbd[] = {
+// {14, 14},      /* USART0 for terminal output */
+   {28, 28},      /* USB0 */
+   {47, 47},      /* USB1 */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
+
+#if defined(SMXUSBH)
+const IRQ_PERM sb_irq_perm_usbh[] = {
+// {14, 14},      /* USART0 for terminal output */
+   {28, 28},      /* USB0 */
+   {47, 47},      /* USB1 */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
 #endif /* SMX_CFG_SSMX */

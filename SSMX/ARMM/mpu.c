@@ -1,5 +1,5 @@
 /*
-* mpu.c                                                     Version 6.1.0
+* mpu.c                                                     Version 6.2.0
 *
 * ARMM MPU control functions for use by smx and init code.
 *
@@ -195,7 +195,7 @@ bool mp_MPACreateLSR(LCB_PTR lsr, MPA* tmp, u32 tmsk, u32 mpasz)
       #endif
 
      #elif SB_CPU_ARMM8
-      if (lsr->flags.umode) /*<4>*/
+      if (lsr->flags.mode.umode) /*<4>*/
       {
          *srp++ = lsr->sr.rbar;
          *srp   = lsr->sr.rlar;
@@ -312,7 +312,7 @@ void mp_MPUInit(void)
 *  mp_MPULoad() Internal function called from the scheduler. Loads new task's 
 *  active MPA slots into the MPU. Sets PSPLIM and MPU_CTRL = 5 (BR ON, MPU ON).
 */
-void mp_MPULoad(bool task)
+u32 mp_MPULoad(u32 task)
 {
    u32* mp;
 
@@ -334,9 +334,9 @@ void mp_MPULoad(bool task)
 
    /* skip MPU load if mp and smx_cmpap = mpa_dflt */
    if (mp == (u32*)mpa_dflt && smx_cmpap == (u32*)mpa_dflt)
-      return;
+      return task;
 
-   /* Disable the MPU */
+   /* disable the MPU */
    __DMB();
    *ARMM_MPU_CTRL = 0;
 
@@ -406,14 +406,14 @@ void mp_MPULoad(bool task)
  #endif /* MP_MPA_DEV */
 
   #if SMX_CFG_MPU_ENABLE
-   /* enable the MPU with background region on <13> */
+   /* enable the MPU with background region on (BR_ON) <13> */
    __asm("ldr r2, =0xE000ED94");
    __asm("mov r0, #0x5");
    __asm("str r0, [r2]"); 
   #endif
    __DSB();
    __ISB();
-   return;
+   return task;
 }
 
 #if MP_MPU_STATSZ != 0
@@ -1096,7 +1096,7 @@ u8* mp_RegionGetHeap(u32 sz, u32 hn, u32* psrd)
       pmode callers can also do SVC calls (unnecessarily), so the same checks
       (restrictions) are done on the block. To make an unrestricted region,
       a pmode caller must make a direct call not an SVC call.
-  13. *ARMM_MPU_CTRL = 0x5; cannot be used here if MP_MPA_DEV = 0 because the
+  13. *ARMM_MPU_CTRL = 1; cannot be used here if MP_MPA_DEV = 0 because the
       intervening assembly code changes the register storing the ARMM_MPU_CTRL
       address.
 */

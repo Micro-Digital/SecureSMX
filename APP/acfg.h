@@ -1,5 +1,5 @@
 /*
-* acfg.h                                                    Version 6.0.0
+* acfg.h                                                    Version 6.2.0
 *
 * Application Configuration Constants.
 *
@@ -96,21 +96,67 @@
 #define MW_FATFS_DEMO           0
 #endif
 
+#if defined(SMXFS)
+#define SMXFS_DEMO              1
+#else
+#define SMXFS_DEMO              0
+#endif
+
+#if defined(SMXNS)
+#define SMXNS_DEMO              1
+#else
+#define SMXNS_DEMO              0
+#endif
+
+#if defined(SMXUSBD)
+#define SMXUSBD_DEMO            1
+#else
+#define SMXUSBD_DEMO            0
+#endif
+
+#if defined(SMXUSBH)
+#define SMXUSBH_DEMO            1
+#else
+#define SMXUSBH_DEMO            0
+#endif
+
 
 /* portal configuration */
 
 #if SMX_CFG_PORTAL
 #define CP_PORTAL               1  /* enable console partition portal */
-
  #if MW_FATFS_DEMO
 #define FP_PORTAL               1  /* enable file system partition portal */
  #else
 #define FP_PORTAL               0  /* keep 0 */
  #endif
+#define SFS_PORTAL              1  /* enable smxFS portal */
+#define SFS_PORTAL_SD           1  /* enable smxFS SD card portal (used by smxUSBD mass storage) */
+#define SNS_PORTAL              1  /* enable smxNS portals */
+#define SNS_PORTAL_API          0  /* enable smxNS portal API version (not finished) */
+#define SNS_PORTAL_TCP          1  /* enable smxNS portal TCP version */
+#define SUD_PORTAL              1  /* enable smxUSBD portals */
+#define SUD_PORTAL_MOUSE        1  /* enable smxUSBD mouse portal */
+#define SUD_PORTAL_SERIAL       1  /* enable smxUSBD serial portal */
+#define SU_PORTAL               1  /* enable smxUSBH portals */
+#define SU_PORTAL_CB            1  /* enable smxUSBH event callback portal */
+#define SU_PORTAL_FTDI232       1  /* enable smxUSBH FTDI232 portal */
+#define SU_PORTAL_MS            1  /* enable smxUSBH mass storage portal */
 
 #else   /* keep all 0 */
 #define CP_PORTAL               0
 #define FP_PORTAL               0
+#define SFS_PORTAL              0
+#define SFS_PORTAL_SD           0
+#define SNS_PORTAL              0
+#define SNS_PORTAL_API          0
+#define SNS_PORTAL_TCP          0
+#define SUD_PORTAL              0
+#define SUD_PORTAL_MOUSE        0
+#define SUD_PORTAL_SERIAL       0
+#define SU_PORTAL               0
+#define SU_PORTAL_FTDI232       0
+#define SU_PORTAL_MS            0
 #endif /* SMX_CFG_PORTAL */
 
 

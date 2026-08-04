@@ -1,5 +1,5 @@
 /*
-* fpdemo.c                                                  Version 6.1.0
+* ffpdemo.c                                                 Version 6.1.0
 *
 * File portal demo for FatFs.
 *
@@ -32,9 +32,9 @@
 
 #if MW_FATFS_DEMO
 
-#include "fp.h"
+#include "ffp.h"
 #include "cpmap.h"
-#include "fpmap.h"
+#include "ffpmap.h"
 
 #if SMX_CFG_SSMX
 #pragma section_prefix = ".fpd"  /* file portal demo sectors */

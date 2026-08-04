@@ -1,5 +1,5 @@
 /*
-* tportlc.c                                                 Version 6.0.0
+* tportlc.c                                                 Version 6.2.0
 *
 * Tunnel portal client functions and objects.
 *
@@ -57,7 +57,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
    if (pch->sxchg == NULL)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NEXIST, &mhp->errno);
-      mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, false);
       return false;
    }
 
@@ -65,7 +65,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
    if (pch->pmsg == NULL)
    {
       mp_PortalEM((PS*)pch, SPE_NO_PMSG, NULL);
-      mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, false);
       return false;
    }
 
@@ -75,7 +75,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
       pch->csem = smx_SemCreate(SMX_SEM_EVENT, 1, csname ? csname : "csem", 0);
       if (pch->csem == NULL)
       {
-         mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, false);
          return false; /* SMXE_INV_PAR or SMXE_OUT_OF_SCBS */
       }
       csem_cre = true;
@@ -88,7 +88,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
       if (pch->ssem == NULL)
       {
          smx_SemDelete(&pch->csem);
-         mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, false);
          return false; /* SMXE_INV_PAR or SMXE_OUT_OF_SCBS */
       }
    }
@@ -103,7 +103,7 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
    omsp->cmd   = CLOSE; /*<3>*/
    omsp->con.eod  = false;
    omsp->con.sod  = false;
-   omsp->errno   = SMXE_OK;
+   omsp->errno = SMXE_OK;
    omsp->mdsz  = msz - thsz;
    omsp->rqsz  = 0;
    omsp->csem  = pch->csem;
@@ -120,10 +120,10 @@ bool mp_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo,
    if (smx_SemTest(pch->csem, tmo))
    {
       pch->open = true;
-      mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, true);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, true);
       return true;
    }
-   mp_PORTAL_RET(MP_ID_TPORTAL_OPEN, false);
+   mp_PORTAL_LOG_RET(MP_ID_TPORTAL_OPEN, false);
    return false;
 }
 
@@ -156,12 +156,12 @@ bool mp_TPortalClose(TPCS* pch)
    /* delete semaphores */
    if (!smx_SemDelete(&pch->csem) || !smx_SemDelete(&pch->ssem))
    {
-      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_CLOSE, false);
       return false; /* error = SMXE_INV_SCB */
    }
    else
    {
-      mp_PORTAL_RET(MP_ID_TPORTAL_CLOSE, true);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_CLOSE, true);
       return true;
    }
 }
@@ -188,7 +188,7 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
    if (mhp == 0)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, NULL);
-      mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
       return false;
    }
    mhp->cmpsz = 0;
@@ -197,7 +197,7 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
    if (dp == NULL && rqsz > pch->mdsz)
    {
       mp_PortalEM((PS*)pch, SPE_INV_SZ, &mhp->errno);
-      mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
       return false;
    }
 
@@ -207,7 +207,7 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
       /* send RECEIVE command */
       mhp->con.eod = false;
       mhp->con.sod = true;
-      mhp->errno  = SMXE_OK;
+      mhp->errno   = SMXE_OK;
       mhp->rqsz    = rqsz;
       smx_SemSignal(pch->ssem);
 
@@ -215,20 +215,20 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
       if (!smx_SemTest(pch->csem, tmo))   /* timeout */
       {
          mp_PortalEM((PS*)pch, SPE_CLIENT_TMO, &mhp->errno);
-         mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
          pch->open = false;
       }
       else if (mhp->errno == SPE_TRANS_INC)  /* transfer incomplete */
       {
          mp_PortalEM((PS*)pch, SPE_TRANS_INC, &mhp->errno);
-         mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
          return false;
       }
    }
    else  /* portal not open */
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, &mhp->errno);
-      mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
       return false;
    }
 
@@ -252,13 +252,13 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
          if (!smx_SemTest(pch->csem, tmo))   /* timeout */
          {
             mp_PortalEM((PS*)pch, SPE_CLIENT_TMO, &mhp->errno);
-            mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+            mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
             pch->open = false;
          }
          else if (mhp->errno == SPE_TRANS_INC)  /* transfer incomplete */
          {
             mp_PortalEM((PS*)pch, SPE_TRANS_INC, &mhp->errno);
-            mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+            mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
             return false;
          }
       }
@@ -267,12 +267,12 @@ bool mp_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
          if (dp == NULL)  /* no-copy */
             mhp->cmpsz = pch->mdsz;
          mhp->con.eod = false;
-         mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, true);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, true);
          return true;
       }
    }
    mp_PortalEM((PS*)pch, SPE_PORTAL_CLOSED, &mhp->errno);   /* portal was closed */
-   mp_PORTAL_RET(MP_ID_TPORTAL_RECEIVE, false);
+   mp_PORTAL_LOG_RET(MP_ID_TPORTAL_RECEIVE, false);
    return false;
 }
 
@@ -298,7 +298,7 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
    if (mhp == 0)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, NULL);
-      mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
       return false;
    }
 
@@ -316,33 +316,33 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
             mhp->rqsz = sz;
             mhp->con.sod = true;
             mhp->con.eod = true;
-            mhp->errno  = SMXE_OK;
+            mhp->errno   = SMXE_OK;
             smx_SemSignal(pch->ssem);         /* notify server */
             /* wait for server done ack */
             if (!smx_SemTest(pch->csem, tmo))   /* timeout */
             {
                mp_PortalEM((PS*)pch, SPE_CLIENT_TMO, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                pch->open = false;
                return false;
             }
             else if (mhp->errno == SPE_TRANS_INC)  /* transfer incomplete */
             {
                mp_PortalEM((PS*)pch, SPE_TRANS_INC, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                return false;
             }
             else  /* transmission complete */
             {
                mhp->cmpsz = mdsz;
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, true);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, true);
                return true;
             }
          }
          else
          {
             mp_PortalEM((PS*)pch, SPE_INV_SZ, &mhp->errno);  /* size too big */
-            mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+            mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
             return false;
          }
       }
@@ -350,7 +350,7 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
       /* copy and send one or more blocks */
       mhp->con.sod = true;
       mhp->con.eod = false;
-      mhp->errno  = SMXE_OK;
+      mhp->errno   = SMXE_OK;
       mhp->rqsz    = sz;
       do 
       {
@@ -366,14 +366,14 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
             if (!smx_SemTest(pch->csem, tmo))   /* timeout */
             {
                mp_PortalEM((PS*)pch, SPE_CLIENT_TMO, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                pch->open = false;
                return false;
             }
             else if (mhp->errno == SPE_TRANS_INC)  /* transfer incomplete */
             {
                mp_PortalEM((PS*)pch, SPE_TRANS_INC, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                return false;
             }
             mhp->cmpsz += mdsz;
@@ -390,27 +390,27 @@ bool mp_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo)
             if (!smx_SemTest(pch->csem, tmo))   /* timeout */
             {
                mp_PortalEM((PS*)pch, SPE_CLIENT_TMO, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                pch->open = false;
                return false;
             }
             else if (mhp->errno == SPE_TRANS_INC)  /* transfer incomplete */
             {
                mp_PortalEM((PS*)pch, SPE_TRANS_INC, &mhp->errno);
-               mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+               mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
                return false;
             }
             mhp->cmpsz += mhp->mdsz;
          }
          if (sz == 0)
          {
-            mp_PORTAL_RET(MP_ID_TPORTAL_SEND, true);
+            mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, true);
             return true;
          }
       } while (pch->open);
    }
    mp_PortalEM((PS*)pch, SPE_PORTAL_CLOSED, &mhp->errno);   /* portal was closed */
-   mp_PORTAL_RET(MP_ID_TPORTAL_SEND, false);
+   mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SEND, false);
    return false;
 }
 #endif /* SMX_CFG_PORTAL */

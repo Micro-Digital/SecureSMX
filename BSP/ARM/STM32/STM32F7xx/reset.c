@@ -1,5 +1,5 @@
 /*
-* reset.c                                                   Version 6.0.0
+* reset.c                                                   Version 6.2.0
 *
 * Reset vector and stack pointer for STM32F7xxxx. Put at start of every
 * major code region in case it is biggest and MpuPacker locates it first.
@@ -63,7 +63,7 @@ __root const intvec_elem __ucom_reset[] @ ".ucom.reset" =
 /*  1 */  __iar_program_start,             /* Reset Vector (Entry Point) */
 };
 
-#if defined(MW_FATFS)
+#if defined(SMXFS) || defined(MW_FATFS)
  #ifdef __cplusplus
 __root extern const intvec_elem __fs_reset[] @ ".fs.reset" =
  #else
@@ -74,3 +74,40 @@ __root const intvec_elem __fs_reset[] @ ".fs.reset" =
 /*  1 */  __iar_program_start,             /* Reset Vector (Entry Point) */
 };
 #endif
+
+#if defined(SMXNS)
+ #ifdef __cplusplus
+__root extern const intvec_elem __ns_reset[] @ ".ns.reset" =
+ #else
+__root const intvec_elem __ns_reset[] @ ".ns.reset" =
+ #endif
+{
+/*  0 */  { .__ptr = __sfe( "CSTACK" ) },  /* Initial Stack Pointer */
+/*  1 */  __iar_program_start,             /* Reset Vector (Entry Point) */
+};
+#endif
+
+#if defined(SMXUSBD)
+ #ifdef __cplusplus
+__root extern const intvec_elem __usbd_reset[] @ ".usbd.reset" =
+ #else
+__root const intvec_elem __usbd_reset[] @ ".usbd.reset" =
+ #endif
+{
+/*  0 */  { .__ptr = __sfe( "CSTACK" ) },  /* Initial Stack Pointer */
+/*  1 */  __iar_program_start,             /* Reset Vector (Entry Point) */
+};
+#endif
+
+#if defined(SMXUSBH)
+ #ifdef __cplusplus
+__root extern const intvec_elem __usbh_reset[] @ ".usbh.reset" =
+ #else
+__root const intvec_elem __usbh_reset[] @ ".usbh.reset" =
+ #endif
+{
+/*  0 */  { .__ptr = __sfe( "CSTACK" ) },  /* Initial Stack Pointer */
+/*  1 */  __iar_program_start,             /* Reset Vector (Entry Point) */
+};
+#endif
+

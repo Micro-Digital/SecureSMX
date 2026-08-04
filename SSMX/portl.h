@@ -1,5 +1,5 @@
 /*
-* portl.h                                                   Version 6.1.0
+* portl.h                                                   Version 6.2.0
 *
 * Portal definitions.
 *
@@ -50,6 +50,11 @@ typedef enum {NOP, OPEN, SEND, RECEIVE, CLOSE, CONTROL} PCMD;
 typedef enum {
          NOSVR,
          CP,      /* console portal */
+         SFSP,    /* smxFS portal */
+         SFSP_SD, /* smxFS SD driver portal */
+         SNSP,    /* smxNS portal */
+         SUDP,    /* smxUSBD portal */
+         SUP,     /* smxUSBH portal */
          FP,      /* FatFs portal */
          TSTPP,   /* tsmx test pmode portal */
          TSTUP,   /* tsmx test umode portal */
@@ -199,7 +204,7 @@ void  mp_TPortalServer(TPSS* pshp, u32 stmo);
 /* general */
 void  mp_PortalEM(PS* pch, PERRNO errno, PERRNO* ep);
 void  mp_PortalLog(u32 id, u32 p1=0, u32 p2=0, u32 p3=0, u32 p4=0, u32 p5=0, u32 p6=0);
-void  mp_PortalRet(u32 id, u32 rv);
+void  mp_PortalLogRet(u32 id, u32 rv);
 }
 #else  /*--------------- for C without default parameters -------------------*/
 
@@ -229,7 +234,7 @@ void  mp_TPortalServer(TPSS* psh, u32 stmo);
 /* General */
 void  mp_PortalEM(PS* pch, PERRNO errno, PERRNO* ep);
 void  mp_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6);
-void  mp_PortalRet(u32 id, u32 rv);
+void  mp_PortalLogRet(u32 id, u32 rv);
 #endif /* __cplusplus */
 
 /*===========================================================================*
@@ -371,8 +376,8 @@ void  mp_PortalRet(u32 id, u32 rv);
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, (u32)p4, (u32)p5, 0)
 #define mp_PORTAL_LOG6(id, p1, p2, p3, p4, p5, p6) \
                   mp_PortalLog(id, (u32)p1, (u32)p2, (u32)p3, (u32)p4, (u32)p5, (u32)p6)
-#define mp_PORTAL_RET(id, rv) \
-                  mp_PortalRet(id, rv)
+#define mp_PORTAL_LOG_RET(id, rv) \
+                  mp_PortalLogRet(id, rv)
 
 #else
 
@@ -384,7 +389,7 @@ void  mp_PortalRet(u32 id, u32 rv);
 #define mp_PORTAL_LOG4(id, p1, p2, p3, p4) 
 #define mp_PORTAL_LOG5(id, p1, p2, p3, p4, p5) 
 #define mp_PORTAL_LOG6(id, p1, p2, p3, p4, p5, p6) 
-#define mp_PORTAL_RET(id, rv)
+#define mp_PORTAL_LOG_RET(id, rv)
  
 #endif /* SMX_CFG_EVB */
 

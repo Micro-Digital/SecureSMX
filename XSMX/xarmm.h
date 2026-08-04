@@ -1,5 +1,5 @@
 /*
-* xarmm.h                                                   Version 6.1.0
+* xarmm.h                                                   Version 6.2.0
 *
 * ARMM (e.g. Cortex-M) definitions and macros, including C scheduler
 * macros. The smx Porting Guide documents these macros.
@@ -35,6 +35,8 @@ extern "C" {
 #endif
 
 void     smx_MakeFrame(void);
+void     smx_MPU_BROff(void);
+void     smx_MPU_BROn(void);
 void     smx_MSSet(void);
 void     smx_SFModPC(s32 n);           /* modify PC in stack frame */
 bool     smx_TSOvfl(void);             /* task stack overflow (ARMM8) */
@@ -46,28 +48,20 @@ void     smxu_SchedAutoStop(void);
 void     smxu_SchedAutoStopLSR(void);
 
 #if SMX_CFG_SSMX
-void     smx_BROff(void);
-void     smx_BROn(void);
-void     smx_BRRestoreOff(void);
-void     smx_BRSaveOn(void);
 void     smx_PBlockRelSlot(u8 sn);
 bool     smx_TaskOpPermit(TCB_PTR task);
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+
 #if SMX_CFG_MPU_ENABLE
-#define  smx_MPU_BR_OFF()         smx_BROff();
-#define  smx_MPU_BR_ON()          smx_BROn();
-#define  smx_MPU_BR_RESTORE_OFF() smx_BRRestoreOff();
-#define  smx_MPU_BR_SAVE_ON()     smx_BRSaveOn();
+#define  smx_MPU_BR_OFF()         smx_MPU_BROff();
+#define  smx_MPU_BR_ON()          smx_MPU_BROn();
 #else
 #define  smx_MPU_BR_OFF()
 #define  smx_MPU_BR_ON()
-#define  smx_MPU_BR_RESTORE_OFF()
-#define  smx_MPU_BR_SAVE_ON()
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #define smx_ISR_ENTER() \
@@ -110,7 +104,6 @@ extern "C" {
 extern void mp_MPULoad_M8(u32* mp);
 extern void smx_SwitchToNewStack(void);
 extern void smx_SwitchStacks(void);
-extern void smx_SwitchToPSP(void);
 #ifdef __cplusplus
 }
 #endif
@@ -173,7 +166,6 @@ extern void smx_SwitchToPSP(void);
 
 /*
 Notes:
-
 1. smx_PENDSVH(): A memory barrier instruction is needed after setting the
    PENDSV flag to ensure the exception happens immediately, not one or more
    instructions below, which could cause a problem, such as if GetCTRV()

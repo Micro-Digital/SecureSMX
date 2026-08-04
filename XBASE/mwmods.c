@@ -1,5 +1,5 @@
 /*
-* mwmods.c                                                  Version 6.0.0
+* mwmods.c                                                  Version 6.2.0
 *
 * Initialization, exit, and other routines for middleware modules
 *
@@ -37,7 +37,7 @@
 #endif
 
 #if defined(MW_FATFS)
-#include "fp.h"
+#include "ffp.h"
 #include "ff_gen_drv.h"
 #include "sd_diskio_dma_rtos.h"
 #endif

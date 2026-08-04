@@ -1,5 +1,5 @@
 /*
-* bbase.c                                                   Version 6.1.0
+* bbase.c                                                   Version 6.2.0
 *
 * smxBase Functions.
 *
@@ -529,7 +529,6 @@ void sb_HFM(void)
 }
 
 /* usage fault manager */
-extern u32 msp_sav;
 bool sb_UFM(void)
 {
    bool  msplim = false;
@@ -599,7 +598,7 @@ void sbu_TMEnd(u32 ts, u32* ptm, u32 cal)
 *                               TIME FUNCTIONS                               *
 *===========================================================================*/
 
-#if SB_CC_TIME_FUNCS  /* if compiler supports time functions */
+#if SB_CC_TIME_FUNC  /* if compiler supports time functions */
 #include <time.h>
 #endif
 
@@ -735,7 +734,7 @@ void sb_DelayUsec(u32 num)
 */
 bool sb_StimeSet(void)
 {
-#if !SB_CC_TIME_FUNCS
+#if !SB_CC_TIME_FUNC
    smx_stime = 0;  /* Just set to 0 for compilers that don't have time functions. */
 
 #else
@@ -786,7 +785,7 @@ bool sb_StimeSet(void)
       sb_ConWriteString(0,8,SB_CLR_LIGHTRED,SB_CLR_BLACK,!SB_CON_BLINK,"time/date conversion failed in init_stime()");
       return(false);
    }
-#endif /* SB_CC_TIME_FUNCS */
+#endif /* SB_CC_TIME_FUNC */
 
    return(true);
 }
@@ -800,7 +799,7 @@ bool sb_StimeSet(void)
 
 void sb_GetLocalTime(DATETIME* pDateTime)
 {
-#if !SB_CC_TIME_FUNCS  /* if compiler does not support time functions */
+#if !SB_CC_TIME_FUNC  /* if compiler does not support time functions */
     pDateTime->wYear = 21;
     pDateTime->wMonth = 1;
     pDateTime->wDay = 1;
@@ -828,7 +827,7 @@ void sb_GetLocalTime(DATETIME* pDateTime)
     {
         memset((u8 *)pDateTime, 0, sizeof(DATETIME));
     }
-#endif /* SB_CC_TIME_FUNCS */
+#endif /* SB_CC_TIME_FUNC */
 }
 
 /*===========================================================================*
@@ -878,97 +877,6 @@ void sb_write32_unaligned(u8*addr, u32 val)
 }
 
 /*===========================================================================*
-*                      MISSING C LIBRARY FUNCTIONS (UMODE)                   *
-*                            NOT IN IAR C LIBRARY                            *
-*===========================================================================*/
-
-char* itoa(int val, char *str, int radix)
-{
-   return ltoa(val, str, radix);
-}
-
-char* ltoa(long val, char *str, int radix)
-{
-   bool          neg;
-   char         *ptr;
-   char          ch;
-   unsigned long uval;
-
-   if (radix < 2 || radix > 36)
-   {
-      if (str)
-         *str = '\0';
-      return str;
-   }
-   ptr = str;
-   /* val can only be negative if radix is 10 */
-   if (radix == 10 && val < 0)
-   {
-      neg = true;
-      uval = (unsigned long) -val;
-   }
-   else
-   {
-      neg = false;
-      uval = (unsigned long) val;
-   }
-   /* generate digits in reverse order */
-   do {
-      ch = (char)(uval % radix);  /* result <= 36 (this is modulo not div) */
-      *ptr++ = (char)(ch < 10 ? ch + '0' : ch - 10 + 'A');
-   } while ((uval = uval / radix) > 0);
-   if (neg)
-      *ptr++ = '-';
-   *ptr = '\0';
-   reverse(str);
-   return str;
-}
-
-int putchar(int c) /*<1>*/
-{
-#if (SB_CFG_CON)
-   return sb_ConPutChar(c);
-#else
-   return -1;
-#endif
-}
-
-char* ultoa(unsigned long uval, char *str, int radix)
-{
-   char *ptr;
-   char  ch;
-
-   if (radix < 2 || radix > 36)
-   {
-      if (str)
-         *str = '\0';
-      return str;
-   }
-   ptr = str;
-   /* generate digits in reverse order */
-   do {
-      ch = (char)(uval % radix);  /* result <= 36 (this is modulo not div) */
-      *ptr++ = (char)(ch < 10 ? ch + '0' : ch - 10 + 'A');
-   } while ((uval = uval / radix) > 0);
-   *ptr = '\0';
-   reverse(str);
-   return str;
-}
-
-void reverse(char* s)  /* reverse the string in place */
-{
-   char c;
-   int i, j;
-
-   for (i = 0, j = strlen(s)-1; i < j; i++, j--)
-   {
-      c    = s[i];
-      s[i] = s[j];
-      s[j] = c;
-   }
-}
-
-/*===========================================================================*
 *                        MISCELLANEOUS FUNCTIONS (PMODE)                     *
 *===========================================================================*/
 
@@ -997,8 +905,3 @@ u32 sb_Peek(SB_PK_PAR par)
    }
    smx_ERROR_RET(SBE_INV_PAR, 0, 0);
 }
-
-/* Notes;
-   1. Necessary to keep out putchar() from IAR library, which requires __word() 
-      to be supplied.
-*/

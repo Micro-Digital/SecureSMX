@@ -1,5 +1,5 @@
 /*
-* svc.c                                                     Version 6.1.0
+* svc.c                                                     Version 6.2.0
 *
 * ARMM SVC system call shell functions. These are all system calls permitted
 * from umode. Some have built-in restrictions. For better security, all unused
@@ -43,6 +43,14 @@ u8 sbu_BSP_SD_Init(void);
 #endif
 #endif
 
+#if (defined(SMXFS) || defined(SMXUSBD)) && defined(SB_CPU_LPC55SXX)
+#include "smxfs.h"
+#endif
+
+#if defined(SMXNS)
+#include "smxns.h"
+#endif
+
 #if SMX_CFG_SSMX
 
 /*===========================================================================*
@@ -81,6 +89,9 @@ enum ssndx {LIM, AS, ASL, BG, BM, BP, BR, BRA, BU, BPC, BPD, BPP,
           #endif
            #if defined(MW_FATFS) && defined(SB_CPU_STM32)
             BSP_SDI,
+           #endif
+           #if (defined(SMXFS) || defined(SMXUSBD)) && SFS_DRV_MMCSD
+            SFS_MSDSC,
            #endif
             EM,
             END
@@ -242,7 +253,7 @@ u32 smx_sst[] = {
    (u32)mp_PortalEM,
   #if SMX_CFG_EVB
    (u32)mp_PortalLog, 
-   (u32)mp_PortalRet,
+   (u32)mp_PortalLogRet,
   #endif
    (u32)mp_TPortalClose,
    (u32)mp_SetDAF,
@@ -251,6 +262,9 @@ u32 smx_sst[] = {
  #endif
   #if defined(MW_FATFS) && defined(SB_CPU_STM32)
    (u32)BSP_SD_Init,
+  #endif
+  #if (defined(SMXFS) || defined(SMXUSBD)) && SFS_DRV_MMCSD && defined(SB_CPU_LPC55SXX)
+   (u32)MMCSD_SetClk,
   #endif
    (u32)smx_EM,
 };
@@ -1025,7 +1039,7 @@ NI void mpu_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6)
    sb_SVCG4(POL)
 }
 
-NI void mpu_PortalRet(u32 id, u32 rv)
+NI void mpu_PortalLogRet(u32 id, u32 rv)
 {
    sb_SVC(POR)
 }
@@ -1083,9 +1097,37 @@ void mp_SetDAF(u32 n)
          break;
    }
    smx_ct->flags.da_enter = 1;
+   smx_srnest = 1;
    smx_PENDSVH();          /* trigger PSVH */
   #endif
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(SMXNS)
+NI MESS * snsu_Ngetbuf(int reserve)
+{
+    sb_SVC(SNS_NGB);
+}
+
+NI void snsu_Nrelbuf(MESS * mp)
+{
+    sb_SVC(SNS_NRB);
+}
+#endif
+
+#if (defined(SMXFS) || defined(SMXUSBD)) && SFS_DRV_MMCSD && defined(SB_CPU_LPC55SXX)
+NI void LPC313XMCI_SetClk(u32 mode)
+{
+    sb_SVC(SFS_MSDSC)
+}
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 /* 
    Notes:

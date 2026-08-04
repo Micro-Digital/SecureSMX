@@ -1,5 +1,5 @@
 /*
-* main.c                                                    Version 6.1.0
+* main.c                                                    Version 6.2.0
 *
 * Application main() and initialization code running non-partitioned.
 *
@@ -48,6 +48,7 @@
 
 void smx_StartupChecks(void);
 
+bool    tdyn_rdy;             /* tdyn ready for interrupts */
 vbool   tick_cben;
 ISR_PTR tick_cbptr;
 
@@ -66,6 +67,7 @@ int main(void)
 #endif
 {
    sb_HWInitAtMain();         /* hardware init after compiler startup code <5> */
+
    sb_INT_DISABLE();
    smx_StartupChecks();       /* abort if checks fail */
    sb_TickInit();             /* initialize tick <2><3> */
@@ -126,7 +128,9 @@ void ainit(u32)
   #if (defined(SMX_STM32CUBEMX) && defined(SMX_TXPORT))
    tx_application_define(0);  /* initialize middleware and application */
   #else
-   if (!mw_modules_init())    /* initialize middleware */
+   if (!smx_modules_init())   /* initialize smx middleware */
+      smx_ERROR(SMXE_INIT_MOD_FAIL, 2)
+   if (!mw_modules_init())    /* initialize non-smx middleware */
       smx_ERROR(SMXE_INIT_MOD_FAIL, 2);
    appl_init();               /* initialize application */
   #endif
@@ -244,7 +248,8 @@ void aexit(SMX_ERRNO errno)
    if (smx_init)
    {
       appl_exit();         /* exit application */
-      mw_modules_exit();   /* exit middleware modules */
+      mw_modules_exit();   /* exit non-smx middleware */
+      smx_modules_exit();  /* exit smx middleware */
 
      #if (SB_CFG_CON)
       #define CP_PCH &cpcli_idle /* define client structure for cp portal calls <8> */

@@ -1,7 +1,7 @@
 /*
-* fpsvr.c                                                   Version 6.0.0
+* ffpsvr.c                                                   Version 6.2.0
 *
-* File portal server for FatFs.
+* FatFs portal server
 *
 * Copyright (c) 2025-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
@@ -28,7 +28,7 @@
 
 #include "smx.h"
 #include "bsp.h"
-#include "fp.h"
+#include "ffp.h"
 
 #if FP_PORTAL
 #if SMX_CFG_SSMX

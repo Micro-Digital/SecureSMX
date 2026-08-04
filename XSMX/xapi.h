@@ -1,5 +1,5 @@
 /*
-* xapi.h                                                    Version 6.0.0
+* xapi.h                                                    Version 6.2.0
 *
 * smx system service routines, application functions, and application macros. 
 *
@@ -419,7 +419,7 @@ bool     mp_MPACreateLSR(LCB_PTR lsr, MPA* tmp=NULL, u32 tmsk=MP_TMSK_DFLT, u32 
 bool     mp_MPASlotMove(u8 dn, u8 sn);
 void     mp_MPUInit(void);
 extern "C" 
-void     mp_MPULoad(bool task);  /* internal use */
+u32      mp_MPULoad(u32 task);  /* internal use */
 bool     mp_MPUSlotLoad(u8 dn, u32* rp);
 bool     mp_MPUSlotSwap(u8 dn, u32* rp);
 u8*      mp_RegionGetHeapR(MPR_PTR rp, u32 sz, u8 sn, u32 attr, const char* name=NULL, u32 hn=0);
@@ -435,7 +435,7 @@ bool     mp_MPACreate(TCB_PTR task, MPA* tmp, u32 tmsk, u32 mpasz);
 bool     mp_MPACreateLSR(LCB_PTR lsr, MPA* tmp, u32 tmsk, u32 mpasz);
 bool     mp_MPASlotMove(u8 dn, u8 sn);
 void     mp_MPUInit(void);
-void     mp_MPULoad(bool task);  /* internal use */
+u32      mp_MPULoad(u32 task);  /* internal use */
 bool     mp_MPUSlotLoad(u8 dn, u32* rp);
 bool     mp_MPUSlotSwap(u8 dn, u32* rp);
 u8*      mp_RegionGetHeapR(MPR_PTR rp, u32 sz, u8 sn, u32 attr, const char* name, u32 hn);

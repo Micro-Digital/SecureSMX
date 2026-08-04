@@ -1,5 +1,5 @@
 /*
-* fportlc.c                                                 Version 6.0.0
+* fportlc.c                                                 Version 6.2.0
 *
 * Free message portal client functions and objects.
 *
@@ -75,7 +75,7 @@ bool mp_FPortalClose(FPCS* pch, u8 xsn)
          }
          else
          {
-            mp_PORTAL_RET(MP_ID_FPORTAL_CLOSE, false);
+            mp_PORTAL_LOG_RET(MP_ID_FPORTAL_CLOSE, false);
             return false;
          }
       }
@@ -84,7 +84,7 @@ bool mp_FPortalClose(FPCS* pch, u8 xsn)
    /* clear FPCS after handles */
    memset((void*)&pch->errno, 0, sizeof(FPCS)-MP_FPCS_ERRNUM_OFFSET);
    smx_HT_DELETE(pch);  /* for smxAware */
-   mp_PORTAL_RET(MP_ID_FPORTAL_CLOSE, true);
+   mp_PORTAL_LOG_RET(MP_ID_FPORTAL_CLOSE, true);
    return true;
 }
 
@@ -104,13 +104,13 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo,
    mp_PORTAL_LOG6(MP_ID_FPORTAL_OPEN, (u32)pch, csn, msz, nmsg, tmo, rxname);
    if (pch->open)
    {
-      mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, true);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_OPEN, true);
       return true;
    }
    if (pch->sxchg == NULL)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NEXIST, &pch->errno);
-      mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, false);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_OPEN, false);
       return false;
    }
    if (nmsg > 0)
@@ -119,7 +119,7 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo,
       pch->rxchg = smx_MsgXchgCreate(SMX_XCHG_NORM, rxname ? rxname : "rxchg", 0);
       if (pch->rxchg == NULL)
       {
-         mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, false);
+         mp_PORTAL_LOG_RET(MP_ID_FPORTAL_OPEN, false);
          return false;
       }
 
@@ -136,7 +136,7 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo,
          {
             /* delete rxchg and release all pmsgs obtained */
             smx_MsgXchgDelete(&pch->rxchg);
-            mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, false);
+            mp_PORTAL_LOG_RET(MP_ID_FPORTAL_OPEN, false);
             return false;
          }
       }
@@ -148,7 +148,7 @@ bool mp_FPortalOpen(FPCS* pch, u8 csn, u32 msz, u32 nmsg, u32 tmo,
    pch->pri  = smx_ct->pri;
    pch->tmo  = tmo;
    pch->open = 1;
-   mp_PORTAL_RET(MP_ID_FPORTAL_OPEN, true);
+   mp_PORTAL_LOG_RET(MP_ID_FPORTAL_OPEN, true);
    return true;
 }
 
@@ -167,7 +167,7 @@ MCB* mp_FPortalReceive(FPCS* pch, u8** dpp)
    if (!pch->open)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, &pch->errno);
-      mp_PORTAL_RET(MP_ID_FPORTAL_RECEIVE, NULL);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_RECEIVE, NULL);
       return NULL;
    }
    pch->errno = SMXE_OK;
@@ -181,7 +181,7 @@ MCB* mp_FPortalReceive(FPCS* pch, u8** dpp)
    #endif
    pmsg = smx_PMsgReceive(pch->rxchg, dpp, dsn, pch->tmo, 0);
    pch->pmsg = pmsg;
-   mp_PORTAL_RET(MP_ID_FPORTAL_RECEIVE, (u32)pmsg);
+   mp_PORTAL_LOG_RET(MP_ID_FPORTAL_RECEIVE, (u32)pmsg);
    return pmsg;
 }
 
@@ -198,7 +198,7 @@ bool mp_FPortalSend(FPCS* pch, MCB* pmsg)
    if (!pch->open)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, &pch->errno);
-      mp_PORTAL_RET(MP_ID_FPORTAL_SEND, false);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_SEND, false);
       return false;
    }
    pch->errno = SMXE_OK;
@@ -206,7 +206,7 @@ bool mp_FPortalSend(FPCS* pch, MCB* pmsg)
       pch->pmsg  = NULL;
    ret = smx_PMsgSend(pmsg, pch->sxchg, pch->pri, pch->rxchg);
    smx_TaskBump(smx_ct, SMX_PRI_NOCHG); /* allow server to run */
-   mp_PORTAL_RET(MP_ID_FPORTAL_SEND, ret);
+   mp_PORTAL_LOG_RET(MP_ID_FPORTAL_SEND, ret);
    return ret;
 }
 
@@ -224,7 +224,7 @@ bool mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg)
    if (!pch->open)
    {
       mp_PortalEM((PS*)pch, SPE_PORTAL_NOPEN, &pch->errno);
-      mp_PORTAL_RET(MP_ID_FTPORTAL_SEND, false);
+      mp_PORTAL_LOG_RET(MP_ID_FTPORTAL_SEND, false);
       return false;
    }
    hp->type = FREEMSG;
@@ -234,7 +234,7 @@ bool mp_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg)
       pch->pmsg  = NULL;
    ret = smx_PMsgSend(pmsg, pch->sxchg, pch->pri, pch->rxchg);
    smx_TaskBump(smx_ct, SMX_PRI_NOCHG); /* allow server to run */
-   mp_PORTAL_RET(MP_ID_FTPORTAL_SEND, ret);
+   mp_PORTAL_LOG_RET(MP_ID_FTPORTAL_SEND, ret);
    return ret;
 }
 #endif /* SMX_CFG_PORTAL */

@@ -1,5 +1,5 @@
 /*
-* bdef.h                                                    Version 6.1.0
+* bdef.h                                                    Version 6.2.0
 *
 * smxBase Definitions.
 *
@@ -29,7 +29,7 @@
 #ifndef SB_BDEF_H
 #define SB_BDEF_H
 
-#define SB_VERSION 0x0610
+#define SB_VERSION 0x0620
 /*
    Version numbers are of the form XX.X.X. Using the hex scheme above,
    digits up to 15 (0xF) can be represented.
@@ -45,19 +45,13 @@
 #define NULL                     (void*)0    /*<1>*/
 #define OFF                      0
 #define ON                       1
+
+#define SB_FAIL                  0
+#define SB_PASS                  1
+
 #define SB_STK_FILL_VAL          0x55555555  /* stack fill value to check usage */
 #define SB_TMO_INF               0xFFFFFFFF  /* infinite timeout */
 #define STATIC                   static
-
-/* compiler macros */
-#define __inline__               inline
-#define __interdecl
-#define __interrupt
-#define __packed                 __packed
-#define __packed_gnu
-#define __packed_pragma          1
-#define __short_enum_attr
-#define __unaligned
 
 /*===========================================================================*
 *                             BASIC DATA TYPES                               *
@@ -175,10 +169,6 @@ typedef enum {
 /*===========================================================================*
 *                              CONTROL BLOCKS                                *
 *===========================================================================*/
-
-#if defined(SCB)  /* defined in ARM CMSIS core_*.h */
-#undef SCB  
-#endif
 
 typedef struct SCB*  SCB_PTR;
 typedef struct PCB*  PCB_PTR;

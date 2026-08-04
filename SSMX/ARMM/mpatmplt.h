@@ -1,5 +1,5 @@
 /*
-* mpatmplt.h                                                Version 6.0.0
+* mpatmplt.h                                                Version 6.2.0
 *
 * Memory Protection Array template definitions.
 *
@@ -57,17 +57,16 @@
 #define V      (1 << 4)    /* region valid */
 
 /* standard region attributes */
-#define DATARW    (XN |  RW | C) /* read/write data <1> */
-#define DATARO    (XN |  RO | C) /* read only data */
 #define CODE      (      RO | C) /* code */
-#define IOR       (XN |  RW)     /* read/write data non-cacheable */
-#define PDATARW   (XN | PRW | C) /* priv read/write data */
-#define PDATARO   (XN | PRO | C) /* priv read only data */
+#define DATARO    (XN |  RO | C) /* read only data */
+#define DATARW    (XN |  RW | C) /* read/write data */
+#define DATARWC   (XN |  RW | C) /* read/write cacheable data */
+#define IOR       (XN |  RW)     /* read/write data */
 #define PCODE     (     PRO | C) /* priv code */
-#define PIOR      (XN | PRW)     /* priv read/write data non-cacheable */
-
-/* write back and write allocate for dcache */
-#define WBWA      (T0 | C | B)
+#define PDATARO   (XN | PRO | C) /* priv read only data */
+#define PDATARW   (XN | PRW | C) /* priv read/write */
+#define PDATARWC  (XN | PRW | C) /* priv read/write cacheable data */
+#define PIOR      (XN | PRW)     /* priv read/write data */
 
 #define NZ(s)     (31-__CLZ(SS(s)))          /* number of leading 0's */
 #define RA(s)     ((u32)__section_begin(s))  /* region address */
@@ -101,10 +100,14 @@ extern u32 cpcsz;
 extern u32 cpdsz;
 extern u32 fpucsz;
 extern u32 fpudsz;
-extern u32 fscsz;
-extern u32 fsdsz;
 extern u32 fpdcsz;
 extern u32 fpddsz;
+extern u32 fscsz;
+extern u32 fsdsz;
+extern u32 fsddcsz;
+extern u32 fsdddsz;
+extern u32 fsdpcsz;
+extern u32 fsdpdsz;
 extern u32 lcdbufsz;
 extern u32 lcdcsz;
 extern u32 lcddsz;
@@ -112,10 +115,25 @@ extern u32 ledcsz;
 extern u32 leddsz;
 extern u32 scsz;
 extern u32 sdsz;
+extern u32 nscsz;
+extern u32 nsdsz;
+extern u32 nslocsz;
+extern u32 nslodsz;
+extern u32 nsdpcsz;
+extern u32 nsdpdsz;
 extern u32 opconcsz;
 extern u32 opcondsz;
 extern u32 ucomcsz;
 extern u32 ucomdsz;
+extern u32 usbdcsz;
+extern u32 usbddsz;
+extern u32 usbhcsz;
+extern u32 usbhdsz;
+extern u32 usbhssz;
+extern u32 usbddpcsz;
+extern u32 usbddpdsz;
+extern u32 usbhdpcsz;
+extern u32 usbhdpdsz;
 
 #elif SB_CPU_ARMM8
 
@@ -160,18 +178,29 @@ extern u32 ucomdsz;
 /* Sections for MPA templates <3> */
 #pragma section = "cp_code"
 #pragma section = "cp_data"
+#pragma section = "EMAC_BUF"
 #pragma section = "EVB"
 #pragma section = "fpu_code"
 #pragma section = "fpu_data"
-#pragma section = "fs_code"
-#pragma section = "fs_data"
 #pragma section = "fpd_code"
 #pragma section = "fpd_data"
+#pragma section = "fs_code"
+#pragma section = "fs_data"
+#pragma section = "fsdp_code"
+#pragma section = "fsdp_data"
+#pragma section = "fsdd_code"
+#pragma section = "fsdd_data"
 #pragma section = "lcd_code"
 #pragma section = "lcd_data"
 #pragma section = "LCD_BUF"
 #pragma section = "led_code"
 #pragma section = "led_data"
+#pragma section = "ns_code"
+#pragma section = "ns_data"
+#pragma section = "nslo_code"
+#pragma section = "nslo_data"
+#pragma section = "nsdp_code"
+#pragma section = "nsdp_data"
 #pragma section = "opcon_code"
 #pragma section = "opcon_data"
 #pragma section = "ram_block"
@@ -187,6 +216,14 @@ extern u32 ucomdsz;
 #pragma section = "sys_data"
 #pragma section = "ucom_code"
 #pragma section = "ucom_data"
+#pragma section = "usbd_code"
+#pragma section = "usbd_data"
+#pragma section = "usbh_code"
+#pragma section = "usbh_data"
+#pragma section = "usbddp_code"
+#pragma section = "usbddp_data"
+#pragma section = "usbhdp_code"
+#pragma section = "usbhdp_data"
 
 #endif /* SB_MPATMPLT_H */
 

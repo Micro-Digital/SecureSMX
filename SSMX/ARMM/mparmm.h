@@ -1,5 +1,5 @@
 /*
-* mparmm.h                                                  Version 6.0.0
+* mparmm.h                                                  Version 6.2.0
 *
 * MPU ARMM definitions.
 *
@@ -33,7 +33,7 @@
 *                                 CONSTANTS                                  *
 *===========================================================================*/
 
-#define MP_MPA_DEV      1  /* 1 for development, 0 for better performance */
+#define MP_MPA_DEV      1  /* 1 for development, 0 for better performance <1> */
 
 #if MP_MPA_DEV
 #define MP_MPR_SZ       3  /* (in words) */
@@ -105,5 +105,10 @@ typedef struct {        /* MEMORY PROTECTION REGION */
 
 typedef MPR MPA[];         /* Memory Protection Array */
 extern  MPA  mpa_dflt;     /* default MPA */
+
+/* Notes:
+   1. MP_MPA_DEV == 1 adds a name field to struct MPR for debugging, which
+      makes the code to load the MPU a little slower.
+*/
 
 #endif /* SB_MPU_H */

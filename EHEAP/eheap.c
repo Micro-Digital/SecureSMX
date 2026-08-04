@@ -1,5 +1,5 @@
 /*
-* eheap.c                                                   Version 6.0.0
+* eheap.c                                                   Version 6.2.0
 *
 * Embedded Heap Functions
 *
@@ -1029,7 +1029,7 @@ void* eh_Malloc(u32 sz, u32 an, u32 hn)
    /* check for invalid size */
    if (sz == 0 || sz > eh_hvp[hn]->hsz)
    {
-      eh_error(EH_INV_PAR, 2, hn);
+      eh_error(EH_INSUFF_HEAP, 2, hn);
       return NULL;
    }
    eh_hvp[hn]->errno = EH_OK;

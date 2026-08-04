@@ -1,5 +1,5 @@
 /*
-* xgo.c                                                     Version 6.0.0
+* xgo.c                                                     Version 6.2.0
 *
 * smx_Go() initializes smx and starts the task scheduler.
 *
@@ -143,7 +143,6 @@ void smx_Go(void)
    smx_srnest = 1; /* prevent premature start */
    smx_sched = SMX_CT_STOP;
    smx_TaskStart(smx_Idle);
-   smx_SwitchToPSP();
    smx_PENDSVH();  /* trigger smx_PendSV_Handler() -- does not return */
 }
 

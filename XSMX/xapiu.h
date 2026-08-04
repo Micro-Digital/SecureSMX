@@ -1,5 +1,5 @@
 /*
-* xapiu.h                                                   Version 6.0.0
+* xapiu.h                                                   Version 6.2.0
 *
 * smx API functions for umode, only
 *
@@ -224,7 +224,7 @@ bool     mpu_FPortalSend(FPCS* pch, MCB* pmsg);
 bool     mpu_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 void     mpu_PortalEM(PS* ph, PERRNO errno, PERRNO* ep);
 void     mpu_PortalLog(u32 id, u32 p1=0, u32 p2=0, u32 p3=0, u32 p4=0, u32 p5=0, u32 p6=0);
-void     mpu_PortalRet(u32 id, u32 rv);
+void     mpu_PortalLogRet(u32 id, u32 rv);
 bool     mpu_TPortalClose(TPCS* pch);
 bool     mpu_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, const char* ssname, const char* csname);
 bool     mpu_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
@@ -413,7 +413,7 @@ bool     mpu_FPortalSend(FPCS* pch, MCB* pmsg);
 bool     mpu_FTPortalSend(FPCS* pch, u8* bp, MCB* pmsg);
 void     mpu_PortalEM(PS* ph, PERRNO errno, PERRNO* ep);
 void     mpu_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6);
-void     mpu_PortalRet(u32 id, u32 rv);
+void     mpu_PortalLogRet(u32 id, u32 rv);
 bool     mpu_TPortalClose(TPCS* pch);
 bool     mpu_TPortalOpen(TPCS* pch, u32 msz, u32 thsz, u32 tmo, const char* ssname, const char* csname);
 bool     mpu_TPortalReceive(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
@@ -599,7 +599,7 @@ bool     mpu_TPortalSend(TPCS* pch, u8* dp, u32 rqsz, u32 tmo);
 #define mp_FTPortalSend(pch, bp, pmsg)          mpu_FTPortalSend(pch, bp, pmsg)
 #define mp_PortalEM(ph, errno, ep)              mpu_PortalEM(ph, errno, ep)
 #define mp_PortalLog(id, p1, p2, p3, p4, p5, p6)  mpu_PortalLog(id, p1, p2, p3, p4, p5, p6)
-#define mp_PortalRet(id, rv)                    mpu_PortalRet(id, rv)
+#define mp_PortalLogRet(id, rv)                 mpu_PortalLogRet(id, rv)
 #define mp_TPortalClose(pch)                    mpu_TPortalClose(pch)
 #define mp_TPortalOpen(pch, msz, thsz, tmo, ssname, csname)  mpu_TPortalOpen(pch, msz, thsz, tmo, ssname, csname)
 #define mp_TPortalReceive(pch, dp, rqsz, tmo)   mpu_TPortalReceive(pch, dp, rqsz, tmo)

@@ -1,5 +1,5 @@
 /*
-* hwmain.c                                                  Version 6.0.0
+* hwmain.c                                                  Version 6.2.0
 *
 * Hardware Init for STM32F7 processors.
 *
@@ -34,8 +34,8 @@
 #endif
 
 /* Macro for checking if the code is located in ROM */
-#define SB_CODE_IN_ROM(x)  ((0x00200000 <= x) && (x < 0x002FFFFF)) || \
-                           ((0x08000000 <= x) && (x < 0x080FFFFF))
+#define SB_CODE_IN_ROM(x)  ((0x00200000 <= (x)) && ((x) < 0x002FFFFF)) || \
+                           ((0x08000000 <= (x)) && ((x) < 0x080FFFFF))
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +47,6 @@ extern void PinConfig(void);    /* pin.c */
 #ifdef __cplusplus
 }
 #endif
-
-static void CPU_CACHE_ENABLE(void);
 
 #if (defined(SMX_STM32CUBEMX) && defined(SMX_TXPORT))
 void sb_HWInitAtMain(void) {} /* already done in startup code for TXPort */
@@ -83,7 +81,19 @@ void sb_HWInitAtMain(void)
     */
    HAL_Init();
 
-   CPU_CACHE_ENABLE();
+   /* Invalidate and enable instruction and data caches */
+   SCB_InvalidateICache();
+   SCB_InvalidateDCache();
+   SCB_EnableICache();
+  #if defined(SMX_TSMX)
+   SCB_EnableDCache();
+  #else
+   //SCB_EnableDCache();
+  #endif
+    
+   /* Enable branch prediction */
+   ((SCB_Type*)SCB_BASE)->CCR |= (1 << 18); 
+    __DSB();
 
    if (SB_CODE_IN_ROM((u32)__low_level_init))
    {
@@ -109,61 +119,6 @@ void sb_HWInitAtMain(void)
    PinConfig();
 }
 #endif
-
-static void CPU_CACHE_ENABLE(void)
-{
-    __DSB();
-    
-    /* Disable the MPU */
-    MPU->CTRL = 0;
-
-   #if !SMX_CFG_SSMX
-    /* Configure Region 0 for internal SRAM as Normal memory type with WBWA and shareable (for coherency with DMA) */
-    MPU->RBAR = 0x20000000 |                    /* Region address */
-                MPU_RBAR_VALID_Msk |            /* Region configured */
-                (0 << MPU_RBAR_REGION_Pos);     /* Region 0 */
-    MPU->RASR = (0x0 << MPU_RASR_XN_Pos) |      /* Allow instruction fetches (may contain code) */
-                (0x3 << MPU_RASR_AP_Pos) |      /* R/W */
-                (0x1 << MPU_RASR_TEX_Pos) |     /* WBWA */
-                (0x1 << MPU_RASR_S_Pos) |       /* Shareable */
-                (0x1 << MPU_RASR_C_Pos) |       /* Cacheable */
-                (0x1 << MPU_RASR_B_Pos) |       /* Bufferable */
-                (0x00 << MPU_RASR_SRD_Pos ) |   /* All sub-regions configured */
-                (0x12 << MPU_RASR_SIZE_Pos) |   /* 512KB */
-                MPU_RASR_ENABLE_Msk;            /* Enable */
-
-    /* Configure Region 1 for SDRAM as Normal memory type with WBWA and shareable (for coherency with DMA) */
-    MPU->RBAR = 0xC0000000 |                    /* Region address */
-                MPU_RBAR_VALID_Msk |            /* Region configured */
-                (1 << MPU_RBAR_REGION_Pos);     /* Region 1 */
-    MPU->RASR = (0x0 << MPU_RASR_XN_Pos) |      /* Allow instruction fetches (may contain code) */
-                (0x3 << MPU_RASR_AP_Pos) |      /* R/W */
-                (0x1 << MPU_RASR_TEX_Pos) |     /* WBWA */
-                (0x1 << MPU_RASR_S_Pos) |       /* Shareable */
-                (0x1 << MPU_RASR_C_Pos) |       /* Cacheable */
-                (0x1 << MPU_RASR_B_Pos) |       /* Bufferable */
-                (0x00 << MPU_RASR_SRD_Pos ) |   /* All sub-regions configured */
-                (0x18 << MPU_RASR_SIZE_Pos) |   /* 32MB */
-                MPU_RASR_ENABLE_Msk;            /* Enable */
-
-    /* Enable the MPU, and use the default map for any unspecified region */
-    MPU->CTRL = MPU_CTRL_PRIVDEFENA_Msk | MPU_CTRL_ENABLE_Msk;
-    __DSB();
-    __ISB();
-   #endif /* !SMX_CFG_SSMX */
-
-    /* Invalidate I&D Cache */
-    SCB_InvalidateICache();
-    SCB_InvalidateDCache();
-    
-    /* Enable branch prediction */
-    ((SCB_Type*)SCB_BASE)->CCR |= (1 << 18); 
-    __DSB();
-
-    /* Enable I&D Cache */
-    SCB_EnableICache();
-    //SCB_EnableDCache();
-}
 
 /* Notes:
    1. Not reliable for tasks.

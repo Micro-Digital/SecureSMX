@@ -1,5 +1,5 @@
 /*
-* xtime.c                                                   Version 6.0.0
+* xtime.c                                                   Version 6.2.0
 *
 * smx_KeepTimeLSR, smx_TimeoutLSR, and time-related functions.
 *
@@ -69,8 +69,7 @@ void smx_KeepTimeLSRMain(u32 par)
    }
 
    /* invoke task timeout LSR */
-   if (smx_etime >= smx_tmo_min) {
-      smx_LSR_INVOKE(smx_TimeoutLSR, 0); }
+   if (smx_etime >= smx_tmo_min) {smx_LSR_INVOKE(smx_TimeoutLSR, 0); }
 
    /* update stime, enable MS scan, and transfer coarse profile counts */
    if (++smx_tick_ctr >= SMX_TICKS_PER_SEC)

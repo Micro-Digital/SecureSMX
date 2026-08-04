@@ -1,5 +1,5 @@
 /*
-* xapip.h                                                   Version 6.0.0
+* xapip.h                                                   Version 6.2.0
 *
 * smx API functions for pmode, only. Reverses macros in xapiu.h to
 * revert to direct (non-SVC) calls.
@@ -221,9 +221,10 @@
 #undef mp_FPortalSend
 #undef mp_FTPortalSend
 #undef mp_MPACreate
+#undef mp_MPACreateLSR
 #undef mp_MPASlotMove
 #undef mp_PortalLog
-#undef mp_PortalRet
+#undef mp_PortalLogRet
 #undef mp_TPortalClose
 #undef mp_TPortalOpen
 #undef mp_TPortalReceive

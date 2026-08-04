@@ -1,5 +1,5 @@
 /*
-* xglob.c                                                   Version 6.1.0
+* xglob.c                                                   Version 6.2.0
 *
 * smx globals
 *
@@ -33,7 +33,6 @@ PCB            smx_bcbs;               /* BCB pool */
 LCB_PTR        smx_clsr;               /* current LSR */
 u32*           smx_cmpap;              /* current MPA pointer */
 TCB_PTR        smx_ct = (TCB_PTR)&smx_dtcb; /* current task */
-bool           smx_ctstart;            /* current task start */
 #if defined(SMX_DEBUG)
 bool const     smx_debug_lib = true;   /* smx library compiled for debug */
 #else
@@ -70,23 +69,22 @@ PCB            smx_lcbs;               /* LCB pool */
 u32            smx_lockctr;            /* scheduler lock nesting counter */
 LQC_PTR        smx_lqi;                /* pointer to beginning of LSR queue */
 LQC_PTR        smx_lqx;                /* pointer to end of LSR queue */
-u32            smx_lqctr;              /* number of LSRs in lq */
+vu32           smx_lqctr;              /* number of LSRs in lq */
 #if SMX_CFG_DIAG
 u32            smx_lqhwm;              /* LSR queue high water mark */
 #endif
 LQC_PTR        smx_lqin;               /* pointer to next free position in lq */
 LQC_PTR        smx_lqout;              /* pointer to next LSR to run */
 PCB            smx_mcbs;               /* MCB pool */
-#if SMX_CFG_SSMX
-bool           smx_mpu_br_off;         /* background region was off in interrupted code */
-#endif
 u16            smx_mshwm;              /* main stack high water mark */
 bool           smx_mshwmv = false;     /* main stack high water mark valid */
 u32            smx_mstop;              /* main stack top -- used in xarmm_iar.s */
 PCB            smx_mucbs;              /* MUCB pool */
 PCB            smx_pcbs;               /* PCB pool */
 PCB            smx_picbs;              /* PICB pool */
-u32            smx_psp_sav;            /* psp stack pointer save */
+#if SMX_CFG_SSMX
+u32            smx_psp_sav;            /* process stack pointer save */
+#endif
 RQCB           smx_rq[SMX_PRI_NUM];    /* ready queue */
 RQCB_PTR       smx_rqx;                /* ready queue last level */
 RQCB_PTR       smx_rqtop;              /* pointer to top priority level of smx_rq */

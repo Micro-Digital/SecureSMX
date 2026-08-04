@@ -1,5 +1,5 @@
 /*
-* xsmx.h                                                    Version 6.0.0
+* xsmx.h                                                    Version 6.2.0
 *
 * smx internal functions and macros. Not for use in application code.
 *
@@ -70,7 +70,6 @@ void     smx_RTC_LSRStart(void);
 #if SMX_CFG_PROFILE || SMX_CFG_RTLIM
 void     smx_RTC_LSREnd(void);
 void     smx_RTC_TaskStart(void);
-void     smx_RTC_TaskStartID(void);
 void     smx_RTC_TaskEnd(void);
 #endif
 
@@ -114,8 +113,8 @@ bool     smx_MsgRel_F(MCB_PTR msg, u16 clrsz);
 u32      smx_MsgRelAll_F(TCB_PTR task);
 void     smx_MutexOnrPriAdj(MUCB_PTR mtx);   /* mutex owner priority adjust */
 void     smx_RelPoolStack(TCB_PTR task);
-bool     smx_SchedRunLSRs(u32 reload);       /* LSR scheduler */
-void     smx_SchedRunTasks(void);            /* task scheduler */
+bool     smx_SchedRunLSRs(void);             /* LSR scheduler */
+bool     smx_SchedRunTasks(void);            /* task scheduler */
 u32      smx_SSRExit(u32 ret, u32 id);       /* SSR exit */
 u32      smx_SSRExitIF(u32 ret);             /* SSR exit internal function */
 void     smx_StackScan(void);                /* scan a stack to set HWM */
@@ -180,12 +179,10 @@ bool     smx_TokenTest(TCB_PTR task, u32 hp, bool priv);  /* verify task has tok
 /* profile macros */
 #if SMX_CFG_PROFILE || SMX_CFG_RTLIM
 #define smx_RTC_TASK_START()    smx_RTC_TaskStart();
-#define smx_RTC_TASK_START_ID() smx_RTC_TaskStartID();
 #define smx_RTC_TASK_END()      smx_RTC_TaskEnd();
 #define smx_RTC_LSR_END()       smx_RTC_LSREnd();
 #else
 #define smx_RTC_TASK_START()
-#define smx_RTC_TASK_START_ID()
 #define smx_RTC_TASK_END()
 #define smx_RTC_LSR_END()
 #endif

@@ -1,5 +1,5 @@
 /*
-* xglob.h                                                   Version 6.1.0
+* xglob.h                                                   Version 6.2.0
 *
 * smx globals
 *
@@ -38,7 +38,6 @@ extern CPS        smx_cpa;          /* coarse profile accumulator */
 extern CPS        smx_cpd;          /* coarse profile display */
 #endif
 extern TCB_PTR    smx_ct;           /* current task */
-extern bool       smx_ctstart;      /* current task start */
 extern TCB        smx_dtcb;         /* dummy task control block */
 extern bool const smx_debug_lib;    /* smx library debug version */
 extern bool       smx_eben;         /* smx error buffer enabled */
@@ -79,7 +78,7 @@ extern PCB        smx_lcbs;         /* LCB pool */
 extern u32        smx_lockctr;      /* scheduler lock nesting counter */
 extern LQC_PTR    smx_lqi;          /* pointer to beginning of LSR queue */
 extern LQC_PTR    smx_lqx;          /* pointer to end of LSR queue */
-extern u32        smx_lqctr;        /* number of LSRs in lq */
+extern vu32       smx_lqctr;        /* number of LSRs in lq */
 #if SMX_CFG_DIAG
 extern u32        smx_lqhwm;        /* LSR queue high water mark */
 #endif
@@ -87,9 +86,6 @@ extern LQC_PTR    smx_lqin;         /* pointer to next free position in lq */
 extern LQC_PTR    smx_lqout;        /* pointer to next LSR to run */
 extern u32        smx_lsr_rtc;      /* LSR runtime counter */
 extern PCB        smx_mcbs;         /* MCB pool */
-#if SMX_CFG_SSMX
-extern bool       smx_mpu_br_off;   /* background region was off in interrupted code */
-#endif
 extern u16        smx_mshwm;        /* main stack high water mark */
 extern bool       smx_mshwmv;       /* main stack high water mark valid */
 extern u32        smx_mstop;        /* main stack top -- used in xarmm_iar.s */
@@ -101,12 +97,14 @@ extern u32        smx_pidle;        /* % of time idle */
 extern u32        smx_povhd;        /* % of time in smx */
 extern u32        smx_pwork;        /* % of time doing useful work */
 #endif
-extern u32        smx_psp_sav;      /* psp stack pointer save */
+#if SMX_CFG_SSMX
+extern u32        smx_psp_sav;         /* process stack pointer save */
+#endif
 extern RQCB       smx_rq[SMX_PRI_NUM]; /* ready queue */
 extern RQCB_PTR   smx_rqx;             /* ready queue last level */
 extern RQCB_PTR   smx_rqtop;           /* pointer to top priority level of smx_rq */
 extern u32*       smx_rtcbi;           /* start of smx_rtcb[][] */
-extern volatile u32  smx_rtc_frame_ctr;   /* determines rtc frame */
+extern vu32       smx_rtc_frame_ctr;   /* determines rtc frame */
 #if SMX_CFG_RTLIM
 extern SCB_PTR    smx_rtlimsem;        /* runtime limit gate semaphore */
 #endif

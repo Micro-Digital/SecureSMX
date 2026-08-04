@@ -1,5 +1,5 @@
 /*
-* xdef.h                                                    Version 6.1.0
+* xdef.h                                                    Version 6.2.0
 *
 * smx constants, error numbers, and SSR IDs.
 *
@@ -36,7 +36,7 @@
 *===========================================================================*/
 
 #define  SMX                           /* used in eheap and third-party code */
-#define  SMX_VERSION       0x0610      /* change in xarmm_iar.inc <1> */
+#define  SMX_VERSION       0x0620      /* change in xarmm_iar.inc <1> */
 
 /* control block types */ 
 typedef enum {
@@ -83,12 +83,15 @@ typedef enum {
 #define  SMX_EF_ANDOR      2           /* ANDOR flag */
 
 /* task and LSR create flags */
-#define  SMX_FL_NONE       0x00000000
-#define  SMX_FL_STRT_LOCKD 0x00000010
-#define  SMX_FL_UMODE      0x00000020
-#define  SMX_FL_CHILD      0x00000040
-#define  SMX_FL_TRUST      0x00000080
-#define  SMX_FL_NOLOG      0x00000100
+typedef enum {
+   SMX_FL_NONE       = 0x00000000,
+   SMX_FL_TRUST      = 0x00000010,
+   SMX_FL_PMODE      = 0x00000020,
+   SMX_FL_UMODE      = 0x00000040,
+   SMX_FL_NOLOG      = 0x00000080,
+   SMX_FL_STRT_LOCKD = 0x00000100,
+   SMX_FL_CHILD      = 0x00000200,
+} SMX_TL_FLAGS;
 
 /* peek parameters */
 typedef enum {

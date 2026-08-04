@@ -2,15 +2,18 @@
 
 
 
-                    smx Version 6.1.0 Release Notes
-                            March 19, 2026
+               SMX and SecureSMX Version 6.2.0 Release Notes
+                              August 3, 2026
 
 
 
      CONTENTS:
         Introduction
+        Configuration and Reference
+        Notable Changes
+        Notes
         Upgrading
-        smx Manuals
+        Manuals
         Internet Support
         smxid.txt
 
@@ -22,21 +25,18 @@
      Introduction
      ------------
 
-     v6.1 notable changes:
+     SecureSMX adds security to SMX RTOS using the Cortex-M Memory
+     Protection Unit (MPU). Security features can be disabled by
+     setting SMX_CFG_SSMX to 0 in XSMX\xcfg.h and xarmm_iar.inc,
+     to use the normal SMX RTOS.
 
-     - Tested with each of the config settings in xcfg.h and a couple
-       others disabled, and added/fixed conditionals as needed.
-     - Time measurement functions were tested and corrected.
-     - Default MPA not loaded into MPU if already. This saves time for
-       legacy tasks using the default MPA.
-     - Footnote comments were carefully revised in xarmm_iar.s and xsched.c.
+     It is available under a dual license GPLv2 or Commercial at     
+     https://github.com/Micro-Digital/SecureSMX.
+     Contact support@smxrtos.com to obtain a commercial license.
 
-     v6.0 notable changes:
+     This does not include SMX middleware (smxFS, smxNS, etc).
 
-     - License changed from Apache v2.0 to dual-license GNUv2/Commercial.
-     - Mutex priority promotion/demotion propagation fully implemented.
-     - Addition of deferred action function support to allow moving
-       TPortal functions to pmode.
+     See Manuals section below for documentation.
 
 
      Configuration and Reference
@@ -79,6 +79,68 @@
          interrupts, which is simpler and safer.
 
 
+     Notable Changes
+     ---------------
+
+     v6.2
+
+     - Simplification and cleanup were done to many files, and interrupt
+       latency was reduced in the scheduler and handlers in xarmm_iar.s.
+
+     - Eliminated SMX_CFG_MPU_BR_EN option. Now BR is always on in umode
+       tasks and off in pmode tasks, which must have sys_code and sys_data
+       in their MPAs. This eliminates the need to turn BR on in smx_ISREnter()
+       and smx_PendSV_Handler (PSVH(), and to restore it in smx_ISRExit().
+
+     - LSR flybacks fixed in smx_SchedRunTasks() (sched()) to run safe LSRs
+       (sLSRs) by returning true to PSVH(), which does an exception return
+       to the sLSR with interrupts enabled. The sLSR does an exception call
+       back to PSVH() when done.
+
+     - LSR flyback handling changed to greatly reduce worst case interrupt
+       latency, which is now only about 65 clocks. Interrupts are enabled
+       for nearly all SMX and SecureSMX code.
+
+       - Added an LSR flyback to the end of PSVH() so interrupts can be
+         enabled during the PSHV() tail.
+
+       - Moved LSR flybacks down to the ends of the resume and start legs
+         in sched() so that interrupts can be enabled for longer in sched().
+         Interrupts are enabled before returning to PSVH(), unless a sLSR is
+         to run. 
+
+     - PSVH() code simplified and optimized, and main stack pointer (msp)
+       corrected to 8-byte alignment for LSRs. msp is 4-byte aligned in PSVH()
+       and sched().
+ 
+     - STM32F7: Removed CPU_CACHE_ENABLE(), which also enabled the MPU
+       if !SSMX, and moved cache enable calls to sb_HWInitAtMain().
+
+     - SecureSMX User's Guide Appendices D and E added to that explain
+       how safe LSR and deferred action code works in PSVH() and sched().
+
+     v6.1
+
+     - Tested with each of the config settings in xcfg.h and a couple
+       others disabled, and added/fixed conditionals as needed.
+
+     - Time measurement functions were tested and corrected.
+
+     - Default MPA not loaded into MPU if already. This saves time for
+       legacy tasks using the default MPA.
+
+     - Footnote comments were carefully revised in xarmm_iar.s and xsched.c.
+
+     v6.0
+
+     - License changed from Apache v2.0 to dual-license GNUv2/Commercial.
+
+     - Mutex priority promotion/demotion propagation fully implemented.
+
+     - Addition of deferred action function support to allow moving
+       TPortal functions to pmode.
+
+
      Notes
      -----
 
@@ -101,8 +163,8 @@
      Unit support.
 
 
-     smx Manuals
-     -----------
+     Manuals
+     -------
 
      SMX RTOS Quick Start -- overview information for all SMX modules
      SMX Target Guide -- processor and tool information

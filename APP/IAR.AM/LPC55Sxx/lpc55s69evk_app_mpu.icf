@@ -1,5 +1,5 @@
 //****************************************************************************
-// lpc55s69evk_app_mpu.icf                                  Version 6.0.0
+// lpc55s69evk_app_mpu.icf                                  Version 6.2.0
 //
 // ILINK Command File for IAR EWARM, App, and NXP LPC55S69-EVK board.
 //
@@ -88,14 +88,14 @@ define block fpu_code    with size = fpucsz,    alignment = 32 {ro section .fpu.
 define block fpu_data    with size = fpudsz,    alignment = 32 {rw section .fpu.bss,     rw section .fpu.data, rw section .fpu.noinit};
 
 /* system regions for pmode */
-define block sys_code with fixed order, size = scsz, alignment = 32
+define block sys_code with fixed order, size = scsz, alignment = 32  /*<3>*/
                 {ro section .intvec, ro section .sys.text, ro section .sys.rodata, 
-                 block ucom_code, block opcon_code, block cp_code}; /*<3>*/
+                 block cp_code, block fpu_code, block opcon_code, block ucom_code};
 
 define block sys_data with fixed order, size = sdsz, alignment = 32 
                 {block CSTACK, block EVT, block EB, block mheap, block ucom_data,  /*<4>*/
                  rw section .sys.bss, rw section .sys.data, rw section .sys.noinit,
-                 block cp_data};
+                 block cp_data, block fpu_data};
 
 /* initialization */
 initialize by copy with packing = zeros {rw};
@@ -103,10 +103,10 @@ do not initialize  {section .noinit, section .mheap};
 
 /* block ordering */
 define block rom_block with fixed order, end alignment = 32
-                        {block sys_code, block led_code, block fpu_code, ro}; 
+                        {block sys_code, block led_code, ro}; 
 
-define block sram_block with fixed order, end alignment = 32
-                        {block sys_data, block EVB, block fpu_data, rw}; 
+define block sram_block with fixed order, end alignment = 32 
+                        {block sys_data, block EVB, rw}; 
 
 /* placements */
 place in ROM            {block rom_block};

@@ -1,5 +1,5 @@
 /*
-* irqtable.c                                                Version 6.0.0
+* irqtable.c                                                Version 6.2.0
 *
 * sb_irq_table[] for STM32F7xxxx. Normally in bsp.c, but here in BSP dir since
 * all ARM-M share the same bsp.c.
@@ -187,4 +187,37 @@ const IRQ_PERM sb_irq_perm_uart[] = {
 };
 #endif
 
+#if defined(SMXFS)
+const IRQ_PERM sb_irq_perm_fs[] = {
+   {49, 49},      /* SDIO */
+   {37, 37},      /* USART1 for terminal output */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
+
+#if defined(SMXNS)
+const IRQ_PERM sb_irq_perm_ns[] = {
+   {61, 62},      /* Ethernet */
+   {37, 37},      /* USART1 for terminal output */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
+
+#if defined(SMXUSBD)
+const IRQ_PERM sb_irq_perm_usbd[] = {
+   {67, 67},      /* USB OTG FS */
+   {77, 77},      /* USB OTG HS */
+   {37, 37},      /* USART1 for terminal output */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
+
+#if defined(SMXUSBH)
+const IRQ_PERM sb_irq_perm_usbh[] = {
+   {67, 67},      /* USB OTG FS */
+   {77, 77},      /* USB OTG HS */
+   {37, 37},      /* USART1 for terminal output */
+   {0xFF, 0xFF},  /* terminator */
+};
+#endif
 #endif /* SMX_CFG_SSMX */

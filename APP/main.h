@@ -1,5 +1,5 @@
 /*
-* main.h                                                    Version 6.0.0
+* main.h                                                    Version 6.2.0
 *
 * Application main header file.
 *
@@ -31,6 +31,7 @@
 
 #include "bsp.h"           /* BSP defines */
 
+extern bool    tdyn_rdy;   /* tdyn ready for interrupts */
 #if SB_CFG_CON
 extern TCB_PTR opcon;
 #endif
@@ -39,8 +40,11 @@ extern TCB_PTR opcon;
 /* portal client structures for console portal */
 extern FPCS cpcli_fpd;     /* fpdemo */
 extern FPCS cpcli_fpu;     /* fpudemo */
+extern FPCS cpcli_fsd;     /* fsdemo */ 
 extern FPCS cpcli_idle;    /* idle */
 extern FPCS cpcli_opcon;   /* opcon */
+extern FPCS cpcli_udd;     /* usbddemo */ 
+extern FPCS cpcli_uhd;     /* usbhdemo */ 
 #endif
 
 /* definitions */
@@ -64,12 +68,14 @@ void  appl_init(void);
 void  appl_exit(void);
 void  display_protosystem_msgs(void);
 void  mheap_init(void);
-bool  mw_modules_init(void);
-bool  mw_modules_exit(void);
 #if (SB_CFG_CON)
 void  opcon_init(void);
 void  opcon_main(u32);
 #endif
+bool  mw_modules_init(void);
+bool  mw_modules_exit(void);
+bool  smx_modules_init(void);
+bool  smx_modules_exit(void);
 void  smx_EM(SMX_ERRNO errno, u8 sev); /* error manager */
 void  smx_EMHook(SMX_ERRNO errno, void* h, u8 sev); /* error manager callback */
 void  smx_HeapManager(u32 hn);

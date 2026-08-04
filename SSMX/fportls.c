@@ -1,5 +1,5 @@
 /*
-* fportls.c                                                 Version 6.0.0
+* fportls.c                                                 Version 6.2.0
 *
 * Free message portal server functions and objects.
 *
@@ -54,7 +54,7 @@ bool mp_FPortalCreate(FPSS** pshp, FPCS** pclp, u32 pclsz, u8 ssn,
       if (psh->sxchg == NULL)
       {
          /* smx reported error: SMXE_WRONG_MODE or SMXE_OUT_OF_XCBS */
-         mp_PORTAL_RET(MP_ID_FPORTAL_CREATE, false);
+         mp_PORTAL_LOG_RET(MP_ID_FPORTAL_CREATE, false);
          return false;
       }
 
@@ -68,7 +68,7 @@ bool mp_FPortalCreate(FPSS** pshp, FPCS** pclp, u32 pclsz, u8 ssn,
       psh->ssn = ssn;
       psh->pshp = (FPSS**)*pshp;
       smx_HT_ADD(psh, pname);  /* for smxAware */
-      mp_PORTAL_RET(MP_ID_FPORTAL_CREATE, true);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_CREATE, true);
    }
    return pass;
 }
@@ -96,7 +96,7 @@ bool mp_FPortalDelete(FPSS* psh, FPCS** pclp, u32 pclsz, u8 xsn)
       if (!smx_MsgXchgDelete(&psh->sxchg))
       {
          /* smx reported error: SMXE_INV_XCB */
-         mp_PORTAL_RET(MP_ID_FPORTAL_DELETE, false);
+         mp_PORTAL_LOG_RET(MP_ID_FPORTAL_DELETE, false);
          return false;
       }
 
@@ -114,7 +114,7 @@ bool mp_FPortalDelete(FPSS* psh, FPCS** pclp, u32 pclsz, u8 xsn)
       psh->sxchg = NULL;
       memset((void*)&psh->errno, 0, sizeof(FPSS)-MP_FPSS_ERRNUM_OFFSET);
       smx_HT_DELETE(psh);  /* for smxAware */
-      mp_PORTAL_RET(MP_ID_FPORTAL_DELETE, true);
+      mp_PORTAL_LOG_RET(MP_ID_FPORTAL_DELETE, true);
    }
    return pass;
 }

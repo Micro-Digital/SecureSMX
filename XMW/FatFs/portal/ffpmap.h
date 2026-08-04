@@ -1,7 +1,7 @@
 /*
-* fpmap.h                                                   Version 6.0.0
+* ffpmap.h                                                   Version 6.2.0
 *
-* File portal shell function map file for FatFs. Include before FatFs calls.
+* FatFs portal shell function map file. Include before FatFs calls.
 *
 * Copyright (c) 2025-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com

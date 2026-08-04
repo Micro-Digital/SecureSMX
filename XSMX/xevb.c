@@ -1,5 +1,5 @@
 /*
-* xevb.c                                                    Version 6.0.0
+* xevb.c                                                    Version 6.2.0
 *
 * smx Event Buffer functions.
 *
@@ -406,7 +406,7 @@ void smx_EVBLogISRRet(void* isr)
 
 void smx_EVBLogLSR(void* lsr)
 {
-   if (smx_evben & SMX_EVB_EN_LSR && !((LCB_PTR)lsr)->flags.nolog)
+   if (smx_evben & SMX_EVB_EN_LSR && !((LCB_PTR)lsr)->flags.mode.nolog)
    {
       u32 istate, *p;
       istate = sb_IntStateSaveDisable();
@@ -422,7 +422,7 @@ void smx_EVBLogLSR(void* lsr)
 
 void smx_EVBLogLSRRet(void* lsr)
 {
-   if (smx_evben & SMX_EVB_EN_LSR && !((LCB_PTR)lsr)->flags.nolog)
+   if (smx_evben & SMX_EVB_EN_LSR && !((LCB_PTR)lsr)->flags.mode.nolog)
    {
       u32 istate, *p;
       istate = sb_IntStateSaveDisable();

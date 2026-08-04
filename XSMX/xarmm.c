@@ -1,5 +1,5 @@
 /*
-* xarmm.c                                                   Version 6.0.0
+* xarmm.c                                                   Version 6.2.0
 *
 * ARMM (Cortex-M) functions.
 *
@@ -30,8 +30,8 @@
 
 #if SMX_CFG_MPU_ENABLE
 
-/* smx_BROff() turns off the MPU background region and enables MPU */
-void smx_BROff(void)
+/* smx_MPU_BROff() turns off the MPU background region and enables the MPU */
+void smx_MPU_BROff(void)
 {
    __DMB();
    *ARMM_MPU_CTRL = 0x1;
@@ -39,44 +39,24 @@ void smx_BROff(void)
    __ISB();
 }
 
-/* smx_smx_BROn() turns on the MPU background region */
-void smx_BROn(void)
+/* smx_MPU_BROn() turns on the MPU background region */
+void smx_MPU_BROn(void)
 {
-   *ARMM_MPU_CTRL = 0x5; /* enable MPU with background region */
+   *ARMM_MPU_CTRL = 0x5;  /* enable MPU with background region */
    __DSB();
-   __ISB(); /* allow background region on to take effect */
-}
-
-/* smx_BRRestoreOff() turns the MPU background region off if it was off */
-void smx_BRRestoreOff(void)
-{
-   if ((*ARMM_NVIC_INT_CTRL & ARMM_FL_RETTOBASE) || (*ARMM_NVIC_SYSHAN_CTRL_STATE & 0x7FF)) /*<1>*/
-   {
-      if (smx_mpu_br_off)
-         smx_MPU_BR_OFF();
-   }
-}
-
-/* smx_BRSaveOn() saves MPU background region status, turns it on, and enables interrupts */
-void smx_BRSaveOn(void)
-{
-   sb_INT_DISABLE();
-   if ((*ARMM_NVIC_INT_CTRL & ARMM_FL_RETTOBASE) || (*ARMM_NVIC_SYSHAN_CTRL_STATE & 0x7FF)) /*<1>*/
-   {
-      if (*ARMM_MPU_CTRL & 0x4)
-         smx_mpu_br_off = false;
-      else
-         smx_mpu_br_off = true;
-   }
-   smx_MPU_BR_ON();
-   sb_INT_ENABLE();
+   __ISB();  /* allow background region on to take effect */
 }
 #endif /* SMX_CFG_MPU_ENABLE */
 
-/* smx_ISREnter() enters smx ISR <5> */
+/* smx_ISREnter() enters smx ISR <1> */
 void smx_ISREnter(void)
 {
-   smx_MPU_BR_SAVE_ON();  /*<2>*/
+  #if SMX_CFG_MPU_ENABLE
+   *ARMM_MPU_CTRL |= 0x4;  /* turn background region on <2> */
+//   __DSB();
+//   __ISB();
+  #endif
+
   #if SMX_CFG_PROFILE
    if (*ARMM_NVIC_INT_CTRL & ARMM_FL_RETTOBASE)
    {
@@ -85,65 +65,70 @@ void smx_ISREnter(void)
   #endif
 }
 
-/* smx_ISRExit() exits smx ISR <5> */
+/* smx_ISRExit() exits smx ISR <1> */
 void smx_ISRExit(void)
 {
-   sb_INT_DISABLE(); /*<3>*/
-   if (*ARMM_NVIC_INT_CTRL & ARMM_FL_RETTOBASE)
+   sb_INT_DISABLE();  /*<3>*/
+   if (*ARMM_NVIC_INT_CTRL & ARMM_FL_RETTOBASE)  /* this is outermost (non-nested) ISR */
    {
-      /* last ISR (not nested) */
       smx_RTC_ISR_END();
-      if (smx_srnest == 0)
+      if (smx_srnest == 0)          /* task was interrupted */
       {
-         /* task or overhead was interrupted */
-         if (smx_lqctr > 0)
+         if (smx_lqctr == 0)
          {
-            /* run LSR scheduler */
+            smx_RTC_TASK_START();   /* resume task count */
+         }
+         else                       /* run LSR scheduler */
+         {
             smx_srnest = 1;
             *ARMM_NVIC_INT_CTRL = ARMM_FL_PENDSVSET; /* trigger PendSV */
             sb_INT_ENABLE();
-            return; /* tail-chain to smx_PendSV_Handler */
-         }
-         else
-         {
-            smx_RTC_TASK_START(); /* resume task count */
+            return;                 /* tail-chain to smx_PendSV_Handler */
          }
       }
-      else
+      else                          /* LSR or SSR was interrupted */
       {
-         /* LSR or SSR was interrupted */
-         if (smx_clsr)
+         if (smx_clsr == 0)
          {
-            smx_RTC_LSR_START();  /* resume LSR count */
+            smx_RTC_TASK_START();   /* resume task count */
          }
          else
          {
-            smx_RTC_TASK_START(); /* resume task count */
+            smx_RTC_LSR_START();    /* resume LSR count */
          }
       }
+
+     #if SMX_CFG_MPU_ENABLE
+      if (smx_ct->flags.umode == 0)
+      {
+//       __DMB();
+         *ARMM_MPU_CTRL = 0x1;      /* turn BR off if ptask was interrupted */
+//       __DSB();
+//       __ISB();
+      }
+     #endif
    }
+
    /* return to point of interrupt */
-   sb_INT_DISABLEF();         /* FAULTMASK = 1 <4> */
-   sb_INT_ENABLE();           /* BASEPRI = 0 or PRIMASK = 0 */
-   smx_MPU_BR_RESTORE_OFF();  /* restore BR if it was on when interrupted */
-   return;                    /* exception exit */
+   sb_INT_DISABLEF();               /* FAULTMASK = 1 <4> */
+   sb_INT_ENABLE();                 /* BASEPRI = 0 or PRIMASK = 0 */
+   return;
 }
 
-
-
 /* Notes:
-1. In smx_MPU_BR_SAVE_ON/OFF(), (ARMM_NVIC_SYSHAN_CTRL_STATE & 0x7FF) != 0
-   means an smx ISR interrupted a processor exception handler, such as SVC
-   or PendSV. These are not smx ISRs, so we are currently in the outermost
-   smx ISR. However, RETTOBASE is 0 because we are nested in one of these
-   exceptions. SysTick is excluded because it is an smx ISR. Reserved bits
-   are assumed to be future exceptions.
+1. smx_srnest handling is different from other CPU ports. Because ISR nesting
+   is tracked by the interrupt controller (RETTOBASE flag), we do not need to
+   increment/decrement smx_srnest in ISR exit/enter. This is important because
+   it means ISRs do not need to start with all interrupts disabled. Also,
+   because of PendSV and because some registers are automatically pushed onto
+   the task's stack, the code here differs substantially from other ports.
 
 2. An ISR may need to reference a variable in the partition it is associated
    with, e.g. FS, USB, etc., and the task that happened to be interrupted is
    likely from a different partition and doesn't have the region in its MPA
    to access it. The variable cannot be put into sys_data because then the
-   umode partition code would not be able to access it.
+   umode partition code would not be able to access it. An alternative is to
+   put the partition's data region into sys_data.
 
 3. DISABLE must be done ahead of read of ARMM_NVIC_INT_CTRL to make it atomic.
    If an ISR nests right after R0 is loaded with the address of this register
@@ -176,11 +161,4 @@ void smx_ISRExit(void)
    we set it to 1, clear BASEPRI or PRIMASK, and then return. FAULTMASK
    inhibits all interrupts like PRIMASK and faults too. FAULTMASK only remains
    set for a few instructions, until the return, which clears it.
-
-5. smx_srnest handling is different from other CPU ports. Because ISR nesting
-   is tracked by the interrupt controller (RETTOBASE flag), we do not need to
-   increment/decrement smx_srnest in ISR exit/enter. This is important because
-   it means ISRs do not need to start with all interrupts disabled. Also,
-   because of PendSV and because some registers are automatically pushed onto
-   the task's stack, the code here differs substantially from other ports.
 */

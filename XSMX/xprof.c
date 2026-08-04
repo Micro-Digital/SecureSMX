@@ -1,5 +1,5 @@
 /*
-* xprof.c                                                   Version 6.0.0
+* xprof.c                                                   Version 6.2.0
 *
 * Profiling functions.
 *
@@ -150,7 +150,7 @@ void smx_RTC_LSRStart(void)
 
 #if SMX_CFG_PROFILE || SMX_CFG_RTLIM
 
-void smx_RTC_LSREnd(void)
+void smx_RTC_LSREnd(void)     /* assumes interrupts enabled */
 {
    s32 d, e;
    sb_INT_DISABLE();
@@ -164,7 +164,7 @@ void smx_RTC_LSREnd(void)
    sb_INT_ENABLE();
 }
 
-void smx_RTC_TaskStart(void)   /* interrupts enabled */
+void smx_RTC_TaskStart(void)  /* assumes interrupts enabled */
 {
    sb_INT_DISABLE();
    smx_ptime = sb_PtimeGet();
@@ -172,13 +172,7 @@ void smx_RTC_TaskStart(void)   /* interrupts enabled */
    sb_INT_ENABLE();
 }
 
-void smx_RTC_TaskStartID(void) /* interrupts disabled */
-{
-   smx_ptime = sb_PtimeGet();
-   smx_pf = SMX_TASK;
-}
-
-void smx_RTC_TaskEnd(void)   /* interrupts enabled */
+void smx_RTC_TaskEnd(void)    /* assumes interrupts enabled */
 {
    s32 d, e;
    sb_INT_DISABLE();

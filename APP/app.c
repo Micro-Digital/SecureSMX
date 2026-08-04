@@ -1,5 +1,5 @@
 /*
-* app.c                                                     Version 6.0.0
+* app.c                                                     Version 6.2.0
 *
 * Protosystem application module.
 *
@@ -36,7 +36,7 @@
 #include "app.h"
 
 #if MW_FATFS_DEMO && FP_PORTAL
-#include "fp.h"
+#include "ffp.h"
 #endif
 
 /* appl_init   (hmode)
@@ -60,6 +60,22 @@ void appl_init(void)
   #if MW_FATFS_DEMO
    fpdemo_init();
   #endif
+
+  #if SMXNS_DEMO
+   nsdemo_init();
+  #endif
+
+  #if SMXFS_DEMO
+   fsdemo_init();
+  #endif
+
+  #if SMXUSBH_DEMO
+   usbhdemo_init();
+  #endif
+
+  #if SMXUSBD_DEMO
+   usbddemo_init();
+  #endif
 }
 
 /* appl_exit (hmode)
@@ -68,6 +84,22 @@ void appl_init(void)
 */
 void appl_exit(void)
 {
+  #if SMXUSBD_DEMO
+   usbddemo_exit();
+  #endif
+
+  #if SMXUSBH_DEMO
+   usbhdemo_exit();
+  #endif
+
+  #if SMXFS_DEMO
+   fsdemo_exit();
+  #endif
+
+  #if SMXNS_DEMO
+   nsdemo_exit();
+  #endif
+
   #if MW_FATFS_DEMO
    fpdemo_exit();
   #endif

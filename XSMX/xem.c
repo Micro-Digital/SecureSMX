@@ -1,5 +1,5 @@
 /*
-* xem.c                                                     Version 6.0.0
+* xem.c                                                     Version 6.2.0
 *
 * smx Error Manager
 *
@@ -33,6 +33,8 @@
 #if SMX_CFG_SSMX
 extern void smxu_EM(SMX_ERRNO errno, u8 sev);  /* in svc.c */
 #endif
+
+extern bool tdyn_rdy;
 
 const char *const smx_errmsgs[] =  /* (2nd const puts into ROM) */
 {
@@ -222,7 +224,8 @@ void smx_EM(SMX_ERRNO errno, u8 sev)
       sb_IntStateRestore(istate);
    }
    smx_EVB_LOG_ERROR(errno, h);
-   sb_MsgOut(SB_MSG_ERR, smx_errmsgs[errno]);
+   if (tdyn_rdy == false)
+      sb_MsgOut(SB_MSG_ERR, smx_errmsgs[errno]);
    smx_EMHook(errno, h, sev);
 }
 

@@ -1,5 +1,5 @@
 /*
-* hwmain.c                                                  Version 6.0.0
+* hwmain.c                                                  Version 6.2.0
 *
 * Hardware Init for LPC55Sxx processors.
 *
@@ -43,7 +43,6 @@ extern void PinConfig(void);    /* pin.c */
 #ifdef __cplusplus
 }
 #endif
-
 
 void sb_HWInitAtMain(void)
 {

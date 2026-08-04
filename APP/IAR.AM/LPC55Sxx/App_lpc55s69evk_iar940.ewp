@@ -2365,6 +2365,9 @@
             <name>$PROJ_DIR$\..\..\..\XBASE\bbase.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\..\XBASE\bcc.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\..\XBASE\bcon.c</name>
         </file>
         <file>
@@ -2387,6 +2390,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\XBASE\mwmods.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\XBASE\smxmods.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\SSMX\tportlc.c</name>

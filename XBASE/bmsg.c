@@ -1,5 +1,5 @@
 /*
-* bmsg.c                                                    Version 6.0.0
+* bmsg.c                                                    Version 6.2.0
 *
 * smxBase Message Display Functions.
 *
@@ -54,8 +54,8 @@ char sb_msgbuf[MAXSZ];         /* msg display buffer */
 
 u8*  sb_ombep = (sb_omb + SB_SIZE_OMB - 1); /* omb end ptr */
 u8*  sb_ombip = sb_omb; /* omb in ptr */
-u8*  sb_ombop = sb_omb; /* omb out ptr */
 u8*  sb_omblp = sb_omb; /* omb last msg ptr */
+u8*  sb_ombop = sb_omb; /* omb out ptr */
 u32  x  = SB_DISP_XMIN; /* display x coordinate */
 u32  y  = SB_DISP_YMIN; /* display y coordinate */
 u32  yn = SB_DISP_YMIN; /* first y coordinate of new msg */
@@ -67,72 +67,75 @@ u32  yp = SB_DISP_YMIN; /* first y coordinate of previous msg */
 */
 void sb_MsgOut(u8 mtype, const char* mp)
 {
-   u32  isav;           /* interrupt status save */
-   u32  len;            /* msg length including NUL */
-   u32  slen;           /* split length to end of omb */
-   bool trun = false;   /* msg truncated */
+   u32   isav;          /* interrupt state save */
+   u32   len;           /* msg length including NUL */
+   u8*   ombip;         /* input pointer to space reserved in omb for msg */
+   u32   slen;          /* split length to end of omb */
+   bool  trun = false;  /* msg truncated */
 
-   isav = sb_IntStateSaveDisable();
+   isav = sb_IntStateSaveDisable();  /*<3>*/
 
-   if (!sb_ombfull)
-   {
-      len = strlen(mp) + 1;
-
-      /* truncate over-size string -- add NUL later */
-      if (len > MAXSZ)
-      {
-         len = MAXSZ;
-         trun = true;
-      }
-
-      /* if message will not fit, set ombfull and MLOST and abort */
-      if ((sb_ombop != sb_ombip) && 
-          (len) > ((SB_SIZE_OMB + sb_ombop - sb_ombip)%SB_SIZE_OMB))
-      {
-         sb_ombfull = true;
-         *sb_omblp |= MLOST;
-      }
-      else
-      {
-         sb_omblp = sb_ombip;
-
-         /* load msg type and clear MLOST flag <1> */
-         *sb_ombip++ = mtype;
-
-         /* if wrap-around, copy partial string to end of omb */
-         if ((sb_ombip + len - 1) > sb_ombep)
-         {
-            slen = (sb_ombep - sb_ombip + 1);
-            memcpy(sb_ombip, mp, slen);
-            mp = mp + slen;
-            len = len - slen;
-            sb_ombip = sb_omb;
-         }
-
-         /* copy partial or full string to omb and advance sb_ombip */
-         memcpy(sb_ombip, mp, len);
-         sb_ombip = sb_ombip + len;
- 
-         /* NUL terminate truncated msg */
-         if (trun)
-            *(sb_ombip - 1) = NUL;
-
-         /* wrap sb_ombip around */
-         if (sb_ombip > sb_ombep)
-            sb_ombip = sb_omb;
-
-         /* set ombfull if pointers are equal */
-         if (sb_ombip == sb_ombop)
-         {
-            sb_ombfull = true;
-         }
-      }
-   }
-   else
+   /* set MLOST and abort if buffer is full */
+   if (sb_ombfull)
    {
       *sb_omblp |= MLOST;
+      sb_IntStateRestore(isav);
+      return;
    }
+
    sb_IntStateRestore(isav);
+   len = strlen(mp) + 1;
+
+   /* truncate oversize string -- add NUL later */
+   if (len > MAXSZ)
+   {
+      len = MAXSZ;
+      trun = true;
+   }
+   isav = sb_IntStateSaveDisable();
+
+   /* if message + header byte will not fit, set ombfull and MLOST and abort */
+   if ((sb_ombop != sb_ombip) && 
+        (len+1) > ((SB_SIZE_OMB + sb_ombop - sb_ombip)%SB_SIZE_OMB))
+   {
+      sb_ombfull = true;
+      *sb_omblp |= MLOST;
+      sb_IntStateRestore(isav);
+      return;
+   }
+
+   sb_omblp = sb_ombip;
+   slen = (sb_ombep - sb_ombip + 1);      /* space to end of omb */
+
+   /* reserve space for message in omb */
+   sb_ombip = sb_ombip + len + 1;
+   if (sb_ombip > sb_ombep)
+      sb_ombip = sb_omb + len - slen + 1; /* wrap around end of omb */
+
+   if (sb_ombip == sb_ombop)
+      sb_ombfull = true;   /* blocks interrupting MsgOut() */
+
+   sb_IntStateRestore(isav);
+
+   ombip = sb_omblp;
+   *ombip++ = mtype;  /* <1> */
+
+   /* copy partial string to end of omb */
+   if (len > slen)
+   {
+      len = len - slen + 1;
+      for (; slen > 1; slen--)
+         *ombip++ = *mp++;
+      ombip = sb_omb;
+   }
+
+   /* copy remainder of string or full string to omb */
+   for (; len > 0; len--)
+      *ombip++ = *mp++;
+
+   /* NUL terminate truncated msg -- overwrite last char */
+   if (trun)
+      *(ombip - 1) = NUL;
 }
 
 /* sb_MsgDisplay()
@@ -148,7 +151,7 @@ void sb_MsgDisplay(void)
    u8*   msp;     /* message scan pointer */
    bool  msglost; /* msg lost */
 
-   isav = sb_IntStateSaveDisable();
+   isav = sb_IntStateSaveDisable();  /*<3>*/
    if (disp_inuse)
    {
       sb_IntStateRestore(isav);
@@ -164,27 +167,30 @@ void sb_MsgDisplay(void)
       mhdr = *sb_ombop++;
       if (sb_ombop > sb_ombep)
          sb_ombop = sb_omb;
-
-      /* determine len to first NUL or ombend + 1  */
       mp = sb_ombop;
+      sb_IntStateRestore(isav);
+
+      /* determine len to first NUL or sb_ombep + 1 */
       for (msp = mp; *msp != NUL && msp <= sb_ombep; msp++){}
       len = msp - mp;
       len2 = 0;
 
-      /* copy full msg or unwrapped part of msg into strbuf */
+      /* copy full msg or unwrapped part of msg into sb_msgbuf */
       strncpy(sb_msgbuf, (const char*)mp, len);
 
-      /* if msg wrapped, append wrapped part of msg to msg in strbuf  */
+      /* if msg wrapped, append wrapped part of msg to msg in sb_msgbuf */
       if (msp > sb_ombep)
       {
          mp = sb_omb;
          for (msp = mp; *msp != NUL; msp++){}
          len2 = msp - mp;
          strncpy(sb_msgbuf + len, (const char*)mp, len2);
+         isav = sb_IntStateSaveDisable();
          sb_ombop = (mp + len2 + 1);
       }
       else
       {
+         isav = sb_IntStateSaveDisable();
          sb_ombop = (mp + len + 1);
       }
       if (sb_ombop > sb_ombep)
@@ -264,4 +270,6 @@ void sb_MsgDisplay(void)
       the SVC exception, which would cause an exception within an exception
       from umode, causing a Hard Fault. sb_MsgDisplay() is normally called
       from the idle task.
+   3. sb_MsgOut() is called from ISRs (in middleware), so it is necessary to
+      disable interrupts in it and sb_MsgDisplay() to protect against reentrancy.
 */

@@ -8,7 +8,7 @@ See www.smxrtos.com/securesmx for background.
 
 Note that it can be configured to just SMX RTOS if security features
 are not desired. See the note about SMX_CFG_SSMX in the release notes,
-in DOC\smx60.txt.
+in DOC\smx*.txt.
 
 Release notes have information about boards supported and configuration.
 We recommend using STMicro STM32F746G-Discovery (Cortex-M7), which is

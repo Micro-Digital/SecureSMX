@@ -1,5 +1,5 @@
 /*
-* tportls.c                                                 Version 6.1.0
+* tportls.c                                                 Version 6.2.0
 *
 * Tunnel portal server functions and objects.
 *
@@ -27,6 +27,10 @@
 *****************************************************************************/
 
 #include "xsmx.h"
+
+#if SMX_CFG_SSMX
+extern bool tdyn_rdy;
+#endif
 
 #if SMX_CFG_PORTAL
 /*
@@ -57,7 +61,7 @@ bool mp_TPortalCreate(TPSS** pshp, TPCS** pclp, u32 pclsz, u8 dsn,
       if (psh->sxchg == NULL)
       {
          /* smx reported error: SMXE_WRONG_MODE or SMXE_OUT_OF_XCBS */
-         mp_PORTAL_RET(MP_ID_TPORTAL_CREATE, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_CREATE, false);
          return false;
       }
 
@@ -71,7 +75,7 @@ bool mp_TPortalCreate(TPSS** pshp, TPCS** pclp, u32 pclsz, u8 dsn,
       psh->dsn = dsn;
       psh->pshp = pshp;
       smx_HT_ADD(psh, pname);  /* for smxAware */
-      mp_PORTAL_RET(MP_ID_TPORTAL_CREATE, true);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_CREATE, true);
    }
    return pass;
 }
@@ -98,7 +102,7 @@ bool mp_TPortalDelete(TPSS* psh, TPCS** pclp, u32 pclsz)
       if (!smx_MsgXchgDelete(&psh->sxchg))
       {
          /* smx reported error: SMXE_INV_XCB */
-         mp_PORTAL_RET(MP_ID_TPORTAL_DELETE, false);
+         mp_PORTAL_LOG_RET(MP_ID_TPORTAL_DELETE, false);
          return false;
       }
       /* clear portal name, sxchg, and open in portal client structures */
@@ -118,7 +122,7 @@ bool mp_TPortalDelete(TPSS* psh, TPCS** pclp, u32 pclsz)
       psh->open = false;
       memset((void*)&psh->mhp, 0, sizeof(TPSS)-MP_TPSS_MHP_OFFSET);
       smx_HT_DELETE(psh);  /* for smxAware */
-      mp_PORTAL_RET(MP_ID_TPORTAL_DELETE, true);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_DELETE, true);
    }
    return pass;
 }
@@ -143,7 +147,8 @@ void mp_PortalEM(PS* ph, SMX_ERRNO errno, SMX_ERRNO* ep)
       strcpy(pem, smx_errmsgs[errno]);
 
    /* display error message */
-   sb_MsgOut(SB_MSG_ERR, pem);
+   if (tdyn_rdy == false)
+      sb_MsgOut(SB_MSG_ERR, pem);
 
    smx_errno = errno;
    smx_errctr++;
@@ -211,11 +216,11 @@ void mp_PortalLog(u32 id, u32 p1, u32 p2, u32 p3, u32 p4, u32 p5, u32 p6)
 }
 
 /*
-* mp_PortalRet()
+* mp_PortalLogRet()
 *
 *  Logs portal function return into EVB.
 */
-void mp_PortalRet(u32 id, u32 rv)
+void mp_PortalLogRet(u32 id, u32 rv)
 {
    u32* p;
    CPU_FL istate = sb_IntStateSaveDisable();
@@ -345,11 +350,42 @@ void mp_TPortalServer(TPSS* psh, u32 stmo)
       /* clear TPSS open, mhp, shp, mdp, mdsz */
       psh->open = false;
       memset((void*)&psh->mhp, 0, sizeof(TPSS)-MP_TPSS_MHP_OFFSET);
-      mp_PORTAL_RET(MP_ID_TPORTAL_SERVER, (u32)psh->pmsg);
+      mp_PORTAL_LOG_RET(MP_ID_TPORTAL_SERVER, (u32)psh->pmsg);
    }
 }
 
 /* Define portal server functions */
+
+#if defined(SMXFS) && SFS_PORTAL
+void sfsp_server(TPSS* psh);
+#else
+#define sfsp_server(psh) mp_PortalEM((PS*)psh, SPE_INV_SID, &psh->mhp->errno);
+#endif
+
+#if defined(SMXUSBD) && SFS_PORTAL_SD
+void sfsp_sd_server(TPSS* psh);
+#else
+#define sfsp_sd_server(psh) mp_PortalEM((PS*)psh, SPE_INV_SID, &psh->mhp->errno);
+#endif
+
+#if defined(SMXNS) && (SNS_PORTAL_API || SNS_PORTAL_TCP)
+void snsp_server(TPSS* psh);
+#else
+#define snsp_server(psh) mp_PortalEM((PS*)psh, SPE_INV_SID, &psh->mhp->errno);
+#endif
+
+#if defined(SMXUSBD) && SUD_PORTAL
+void sudp_server(TPSS* psh);
+#else
+#define sudp_server(psh) mp_PortalEM((PS*)psh, SPE_INV_SID, &psh->mhp->errno);
+#endif
+
+#if defined(SMXUSBH) && SU_PORTAL
+void sup_server(TPSS* psh);
+#else
+#define sup_server(psh) mp_PortalEM((PS*)psh, SPE_INV_SID, &psh->mhp->errno);
+#endif
+
 #if MW_FATFS_DEMO
 void fp_server(TPSS* ph);
 #else
@@ -369,11 +405,24 @@ static void mp_TPortalCallServerFunc(TPSS* psh)
 {
    switch (psh->sid)
    {
-     #if MW_FATFS_DEMO
+      case SFSP:
+         sfsp_server(psh);
+         break;
+      case SFSP_SD:
+         sfsp_sd_server(psh);
+         break;
+      case SNSP:
+         snsp_server(psh);
+         break;
+      case SUDP:
+         sudp_server(psh);
+         break;
+      case SUP:
+         sup_server(psh);
+         break;
       case FP:
          fp_server(psh);
          break;
-     #endif
       case TSTPP:
          tp_pserver(psh);
          break;

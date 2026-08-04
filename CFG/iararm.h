@@ -1,5 +1,5 @@
 /*
-* iararm.h                                                  Version 6.0.0
+* iararm.h                                                  Version 6.2.0
 *
 * Master Preinclude File for IAR ARM. Selects which target board header
 * file to use and which SMX product libraries and demos to include.
@@ -40,21 +40,26 @@
 /*
 * Select SMX Modules/Libraries (by uncommenting)
 */
-#define SMXAWARE         /* smxAware */
-#define MW_FATFS         /* FatFs */
+#define SMXAWARE        /* smxAware */
+//#define SMXFS           /* smxFS */
+//#define SMXNS           /* smxNS */
+//#define SMXUSBD         /* smxUSBD */
+//#define SMXUSBH         /* smxUSBH */
+//#define CSL_USSL        /* Cypherbridge uSSL */
+#define MW_FATFS        /* FatFs */
 
 /*
 * Select Tests
 */
 //#define SMX_TSMX
-//#define SMX_FRPORT_TEST  /* FreeRTOS port test */
-//#define SMX_TXPORT_TEST  /* ThreadX port test */
+//#define SMX_FRPORT_TEST /* FreeRTOS port test */
+//#define SMX_TXPORT_TEST /* ThreadX port test */
 
 /*
 * Select RTOS Porting Layer to Migrate From
 */
-//#define SMX_FRPORT       /* FreeRTOS Port */
-//#define SMX_TXPORT       /* ThreadX Port */
+//#define SMX_FRPORT      /* FreeRTOS Port */
+//#define SMX_TXPORT      /* ThreadX Port */
 
 /*
 * Select Code Generator

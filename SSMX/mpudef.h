@@ -1,5 +1,5 @@
 /*
-* mpudef.h                                                  Version 6.0.0
+* mpudef.h                                                  Version 6.2.0
 *
 * MPU definitions.
 *
@@ -35,14 +35,27 @@ extern MPA mpa_tmplt_idle;
 extern MPA mpa_tmplt_init;
 extern MPA mpa_tmplt_tinit;
 extern MPA mpa_tmplt_fpu;
-extern MPA mpa_tmplt_fs;
 extern MPA mpa_tmplt_fpd;
+extern MPA mpa_tmplt_fs;
+extern MPA mpa_tmplt_fsdd;
+extern MPA mpa_tmplt_fsdp;
 extern MPA mpa_tmplt_lcd;
 extern MPA mpa_tmplt_led;
+extern MPA mpa_tmplt_nshi;
+extern MPA mpa_tmplt_nslo;
 extern MPA mpa_tmplt_opcon;
+extern MPA mpa_tmplt_ufs;
+extern MPA mpa_tmplt_usbd;
+extern MPA mpa_tmplt_usbh;
+extern MPA mpa_tmplt_usbddp;
+extern MPA mpa_tmplt_usbhdp;
 
 /* IRQ permission table externs */
+extern const IRQ_PERM sb_irq_perm_fs[];
+extern const IRQ_PERM sb_irq_perm_ns[];
 extern const IRQ_PERM sb_irq_perm_uart[];
+extern const IRQ_PERM sb_irq_perm_usbd[];
+extern const IRQ_PERM sb_irq_perm_usbh[];
 
 /* heap numbers */
 extern u32 mheap_hn; /* main heap number */

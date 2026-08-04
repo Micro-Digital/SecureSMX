@@ -1,5 +1,5 @@
 //****************************************************************************
-// stm32746g_app.icf                                        Version 6.0.0
+// stm32746g_app.icf                                        Version 6.2.0
 //
 // ILINK linker command file for STMicro STM32746G-EVAL and STM32746G-DISCOVERY
 // boards and SMX (no MPU).
@@ -37,7 +37,7 @@ define block EB         with size = 0xF0,      alignment = 4   { }; /* Error Buf
 define block EMAC_BUF   with size = 0x7000,    alignment = 8   { }; /* EMAC buffer */
 define block EVB        with size = evbsz,     alignment = 4   { }; /* Event Buffer */
 define block EVT        with size = EVT_size,  alignment = 512 { }; /* Exception Vector Table <1> */
-define block mheap      with size = 0x4000,    alignment = 16  { }; /* mheap */
+define block mheap      with size = 0xC000,    alignment = 16  { }; /* mheap <3> */
 define block LCD_BUF    with size = 0x200000,  alignment = 8   { }; /* LCD buffer */
 keep  {block EB, block EMAC_BUF, block EVB, block EVT, block LCD_BUF};
 
@@ -66,4 +66,7 @@ define exported symbol SRAM_E = end(SRAM);
    1. Size = 4*(16 + SB_IRQ_MAX + 1). Must be aligned to power of 2 >= EVT size.
    2. Ensures CSTACK is first, to detect main stack overflows. Also places 
       critical blocks in TCRAM for speed.
+   3. Heap: For SMX middleware, add about this many bytes (decimal) to mheap size:
+        smxFS 27000, smxNS 20000, smxUSBD 12000, smxUSBH 20000
+      Sizes depend on configuration, but these are good starting values.
 */

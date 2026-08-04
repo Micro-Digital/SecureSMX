@@ -1,5 +1,5 @@
 /*
-* xlsr.c                                                    Version 6.0.0
+* xlsr.c                                                    Version 6.2.0
 *
 * smx LSR Functions
 *
@@ -53,7 +53,9 @@ LCB_PTR smx_LSRCreate(FUN_PTR fun, u32 flags, const char* name, TCB_PTR htask, u
    if (pass = smx_ObjectCreateTest((u32*)lhp))
    {
       /* check flags */
-      if ((flags & SMX_FL_UMODE) && (flags & SMX_FL_TRUST))
+      if (((flags & SMX_FL_TRUST) && (flags & SMX_FL_PMODE)) ||
+          ((flags & SMX_FL_TRUST) && (flags & SMX_FL_UMODE)) ||
+          ((flags & SMX_FL_PMODE) && (flags & SMX_FL_UMODE)))
          smx_ERROR_EXIT(SMXE_INV_PAR, NULL, 0, SMX_ID_LSR_CREATE);
 
       /* get an LSR control block */
@@ -67,21 +69,20 @@ LCB_PTR smx_LSRCreate(FUN_PTR fun, u32 flags, const char* name, TCB_PTR htask, u
       lsr->name = (name && *name) ? name : "lsr";
 
      #if SMX_CFG_EVB
-      lsr->flags.nolog = (flags & SMX_FL_NOLOG) ? 1 : 0;
+      lsr->flags.mode.nolog = (flags & SMX_FL_NOLOG) ? 1 : 0;
      #endif
+
+      lsr->flags.load = (flags >> 4);
 
       if (flags & SMX_FL_TRUST)
       {
-         /* set trust flag and clear rest of LCB */
-         lsr->flags.trust = 1;
+         /* clear LCB after name */
          u32* p = (u32*)&lsr->htask;
          for (u32 i = 0; i < (sizeof(LCB) - 16)/4; i++)
             *p++ = 0;
       }
       else
       {
-         lsr->flags.trust = 0;
-
          /* allocate stack block from main heap */
         #if SMX_CFG_SSMX
          #if SB_CPU_ARMM7
@@ -103,7 +104,7 @@ LCB_PTR smx_LSRCreate(FUN_PTR fun, u32 flags, const char* name, TCB_PTR htask, u
          if (stp)
          {
            #if SMX_CFG_SSMX
-            lsr->flags.umode = (flags & SMX_FL_UMODE) ? 1 : 0;
+            lsr->flags.mode.umode = (flags & SMX_FL_UMODE) ? 1 : 0;
             lsr->mpap  = (MPR*)mpa_dflt;
             lsr->mpasz = MP_MPU_ACTVSZ;
            #endif

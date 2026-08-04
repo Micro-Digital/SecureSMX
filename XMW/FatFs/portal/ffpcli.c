@@ -1,7 +1,7 @@
 /*
-* fpcli.c                                                   Version 6.0.0
+* ffpcli.c                                                   Version 6.2.0
 *
-* File portal client for FatFs
+* FatFs portal client
 *
 * Copyright (c) 2025-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
@@ -27,7 +27,7 @@
 *****************************************************************************/
 
 #include "smx.h"
-#include "fp.h"
+#include "ffp.h"
 
 #if FP_PORTAL
 #if SMX_CFG_SSMX

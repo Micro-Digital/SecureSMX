@@ -370,6 +370,22 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
                     <state>$PROJ_DIR$\..\..\..\XPORT\CM\</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Core\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\DCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Function\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Audio\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\CDC\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HID\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Hub\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\MassStor\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Printer\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\USBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XWIFI\</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -660,6 +676,10 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
                 </option>
                 <option>
                     <name>AExtraOptionsCheckV2</name>
@@ -1506,6 +1526,22 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
                     <state>$PROJ_DIR$\..\..\..\XPORT\CM</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Core\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\DCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Function\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Audio\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\CDC\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HID\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Hub\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\MassStor\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Printer\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\USBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XWIFI\</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1796,6 +1832,10 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
                 </option>
                 <option>
                     <name>AExtraOptionsCheckV2</name>
@@ -2642,6 +2682,22 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
                     <state>$PROJ_DIR$\..\..\..\XPORT\CM\</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Core\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\DCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\Function\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Audio\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\CDC\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HCD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\HID\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Hub\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\MassStor\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\Printer\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\USBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XWIFI\</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2932,6 +2988,10 @@
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\</state>
                     <state>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\</state>
+                    <state>$PROJ_DIR$\..\..\..\XFS\</state>
+                    <state>$PROJ_DIR$\..\..\..\XNS\include\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBD\</state>
+                    <state>$PROJ_DIR$\..\..\..\XUSBH\</state>
                 </option>
                 <option>
                     <name>AExtraOptionsCheckV2</name>
@@ -3418,7 +3478,7 @@
     <group>
         <name>Demos</name>
         <file>
-            <name>$PROJ_DIR$\..\..\DEMO\fpdemo.c</name>
+            <name>$PROJ_DIR$\..\..\DEMO\ffpdemo.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\DEMO\fpudemo.c</name>
@@ -3452,6 +3512,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\XBASE\smxaware.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\XBASE\smxmods.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\SSMX\ARMM\svc.c</name>
@@ -3571,6 +3634,9 @@
             <name>$PROJ_DIR$\..\..\..\XBASE\bbase.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\..\XBASE\bcc.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\..\XBASE\bcon.c</name>
         </file>
         <file>
@@ -3618,10 +3684,10 @@
                 <name>$PROJ_DIR$\..\..\..\XMW\FatFs\ff_gen_drv.c</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\fpcli.c</name>
+                <name>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\ffpcli.c</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\fpsvr.c</name>
+                <name>$PROJ_DIR$\..\..\..\XMW\FatFs\portal\ffpsvr.c</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\XMW\FatFs\drivers\sd_diskio_dma_rtos_bspv1.c</name>

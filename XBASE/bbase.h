@@ -1,5 +1,5 @@
 /*
-* bbase.h                                                   Version 6.0.0
+* bbase.h                                                   Version 6.2.0
 *
 * smxBase Master Include File
 *
@@ -46,6 +46,7 @@
 #include "acfg.h"          /* application configuration */
 #endif
 
+#include "bcc.h"           /* C compiler and RTL definitions */
 #include "bdef.h"          /* definitions */
 #include "barmm.h"         /* ARMM macros and definitions */
 #include "bapi.h"          /* API */

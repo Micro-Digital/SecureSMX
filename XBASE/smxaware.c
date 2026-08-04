@@ -1,5 +1,5 @@
 /*
-* smxaware.c                                                Version 6.0.0
+* smxaware.c                                                Version 6.2.0
 *
 * smxAware init, print ring, and utilities.
 * smxAware Live init, server task, and subroutines.
@@ -436,6 +436,374 @@ static void dummy_use(u8 *par)
    dummy_count += *par;  /* do nothing */
 }
 
+#if defined(SMXFS)
+/*
+* smxFS smxAware interface.
+*
+* This section provides smxAware with constants or symbol addresses that
+* are not otherwise accessible by smxAware.
+*
+* If smxFS does not expand or appear in the smxAware top level objects list
+* here are some things to check:
+*
+* 1) smxFS must be 1.40 or greater
+* 2) This file (smxaware.c) must be linked in.
+* 3) smxaware_smxfs_init() must be called in smxfs_init() in smxmods.c
+* 4) static must be removed from "PDEVICEHANDLE g_DevHandle[SFS_MAX_DEV_NUM];"  in fapi.c
+* 5) Set SFS_FILENAME_IN_HANDLE to 1 in fcfg.h to see the open file names and paths
+*
+*****************************************************************************/
+#include "smxfs.h"
+
+/* This structure is a copy of the same structure in smxAware3A\smxAddOns\smxFS\smxFS.cpp.
+   It is initialized when the target is started.
+*/
+typedef struct
+{
+   u32 data_version;
+   u32 SFS_VERSION_value;
+   u32 DEVICEHANDLE_size;
+   u32 SFS_MAX_DEV_NUM_value;
+   u32 SFS_FILENAME_IN_HANDLE_value;
+
+   u32 SFS_FREECLUS_SUPPORT_defined;    /* used in struct DEVICEHANDLE  added in data_version = 101 */
+   u32 SFS_FAT_FSINFO_SUPPORT_defined;  /* used in struct DEVICEHANDLE  added in data_version = 101 */
+   u32 SFS_USE_FAT32_FSINFO_defined;    /* used in struct DEVICEHANDLE  added in data_version = 101 */
+
+   u32 unused3;
+
+} SA_SMXFS_CONST_TYPE;
+SA_SMXFS_CONST_TYPE smxFsConst = {0};  /* Set data_version to 0. If smxAware reads this data structure and data_version is 0 then it has not yet been initialized. */
+
+void smxaware_smxfs_init(void)
+{
+   smxFsConst.data_version                 = 101;   /* 101 includes SFS_FREECLUS_SUPPORT_defined */
+   smxFsConst.SFS_VERSION_value            = SFS_VERSION;       /* The first version for smxAware is 0x0141 = XX.XX */
+   smxFsConst.DEVICEHANDLE_size            = sfs_getdevhandlesize();
+   smxFsConst.SFS_MAX_DEV_NUM_value        = SFS_MAX_DEV_NUM;
+   smxFsConst.SFS_FILENAME_IN_HANDLE_value = SFS_FILENAME_IN_HANDLE;
+#if SFS_FREECLUS_SUPPORT
+   smxFsConst.SFS_FREECLUS_SUPPORT_defined = true;
+#else
+   smxFsConst.SFS_FREECLUS_SUPPORT_defined = false;
+#endif
+
+#if SFS_FAT_FSINFO_SUPPORT
+   smxFsConst.SFS_FAT_FSINFO_SUPPORT_defined = true;
+#else
+   smxFsConst.SFS_FAT_FSINFO_SUPPORT_defined = false;
+#endif
+
+#if SFS_USE_FAT32_FSINFO
+   smxFsConst.SFS_USE_FAT32_FSINFO_defined = true;
+#else
+   smxFsConst.SFS_USE_FAT32_FSINFO_defined = false;
+#endif
+}
+
+#endif /* SMXFS */
+
+#if defined(SMXNS)
+/*
+* smxNS smxAware interface.
+*
+* This section provides smxAware with constants or symbol addresses that
+* are not otherwise accessible by smxAware.
+*
+* If smxNS does not expand or appear in the smxAware top level objects list
+* here are some things to check:
+*
+* 1) smxNS must be 2.60 or greater
+* 2) This file (smxaware.c) must be linked in.
+* 3) smxaware_smxns_init() must be called in smxns_init() in smxmods.c
+*
+*****************************************************************************/
+
+#define NS_DATA_VERSION 102       /* 101 includes SNS_PROTO_IPV6_defined */
+#include "smxns.h"
+
+/* This structure is a copy of the same structure in smxAware3A\smxAddOns\smxNS\smxNS.cpp.
+   It is initialized when the target is started.
+*/
+typedef struct
+{
+   u32 data_version;
+   u32 NS_VERSION_value;
+   u32 maxbuf;
+   u32 nbuffs;
+   u32 messh_sz;
+   u32 nconns;
+   u32 nconfigs;
+   u32 nnets;
+   u32 mess_size;
+   u32 size_of_MESS;
+   u32 size_of_CONNECT;
+   u32 size_of_NETCONF;
+   u32 size_of_NET;
+
+   u32 SNS_PROTO_SNMP_defined;          /* used in struct CONNECT and struct NET */
+   u32 IPOPTIONS_defined;               /* used in struct CONNECT */
+   u32 TCP_OPTIONS_defined;             /* used in struct CONNECT */
+   u32 SNS_PROTO_ARP_defined;           /* used in struct NETCONF */
+   u32 SNS_PROTO_LQRP_defined;          /* used in struct NET */
+   u32 SNS_PROTO_PPP_defined;           /* used in struct NET */
+   u32 SNS_PROTO_SLIP_defined;          /* used in struct NET */
+   u32 DHCP_defined;                    /* used in struct NET */
+   u32 SNS_CONTEXT_SWITCH_FLAG_defined; /* used in struct NET */
+   u32 SNS_PROTO_IPV6_defined;          /* used in struct NET, added in data_version = 101 */
+
+   /* new for smxNS 2.80 */
+   u32 narpslots;                       /* NARPSLOTS */
+   u32 NetsOffsetToIfname;
+   u32 NetsOffsetToARPTable;
+   u32 size_of_ARPTable;
+   u32 size_of_IPAlias;                 /* sizeof(IPAlias[NALIAS]) */
+   u32 FrameBufSize;                    /* added in NS_DATA_VERSION 102 */
+   
+   u32 unused2;
+   u32 unused3;
+   u32 unused4;
+   u32 unused5;
+   u32 unused6;
+   u32 unused7;
+
+} SA_SMXNS_CONST_TYPE;
+SA_SMXNS_CONST_TYPE smxNsConst = {0};   /* Set data_version to 0. If smxAware reads this data structure and data_version is 0 then it has not yet been initialized. */
+
+void smxaware_smxns_init(void)
+{
+   smxNsConst.data_version      = NS_DATA_VERSION;
+   smxNsConst.NS_VERSION_value  = SNS_VERSION;       /* The first version for smxAware is 0x0260 = XX.XX */
+   smxNsConst.maxbuf    = MAXBUF;
+   smxNsConst.nbuffs    = NBUFFS;
+   smxNsConst.messh_sz  = MESSH_SZ;
+   smxNsConst.nconns    = NCONNS;
+#if SNS_VERSION >= 0x0280  /* v2.80 uses the new IPv4 and IPv6 data structures where the
+                              netconf struct has been removed and most of the items are now in NET. */
+   struct NET netStruct;
+   smxNsConst.nconfigs  = 1;
+   smxNsConst.narpslots            = NARPSLOTS;
+   smxNsConst.NetsOffsetToIfname   = (u32) &netStruct.ifname -  (u32)&netStruct;
+   smxNsConst.NetsOffsetToARPTable = (u32) &netStruct.ARPTable -  (u32)&netStruct;
+   smxNsConst.size_of_ARPTable     = sizeof(struct ARPTABENTRY);
+   smxNsConst.size_of_IPAlias      = sizeof(netStruct.IPAlias[NALIAS]);
+#else
+   smxNsConst.nconfigs  = NCONFIGS;
+   smxNsConst.size_of_NETCONF = sizeof(struct NETCONF);
+#endif
+   smxNsConst.nnets     = NNETS;
+   smxNsConst.mess_size = (int)( MAXBUF + 4 + 2 * EXTRAPADDING ) & ~(USSBUFALIGN - 1);
+
+   smxNsConst.size_of_MESS    = sizeof(MESS);
+   smxNsConst.size_of_CONNECT = sizeof(struct CONNECT);
+   smxNsConst.size_of_NET     = sizeof(struct NET);
+   smxNsConst.FrameBufSize    = FRAMEBUFSIZE;
+#ifdef SNS_PROTO_SNMP
+   smxNsConst.SNS_PROTO_SNMP_defined = true;
+#else
+   smxNsConst.SNS_PROTO_SNMP_defined = false;
+#endif
+
+#ifdef IPOPTIONS
+   smxNsConst.IPOPTIONS_defined = true;
+#else
+   smxNsConst.IPOPTIONS_defined = false;
+#endif
+
+#ifdef TCP_OPTIONS
+   smxNsConst.TCP_OPTIONS_defined = true;
+#else
+   smxNsConst.TCP_OPTIONS_defined = false;
+#endif
+
+#ifdef DHCP
+   smxNsConst.DHCP_defined = true;
+#else
+   smxNsConst.DHCP_defined = false;
+#endif
+
+#if SNS_PROTO_ARP
+   smxNsConst.SNS_PROTO_ARP_defined = true;
+#else
+   smxNsConst.SNS_PROTO_ARP_defined = false;
+#endif
+
+#if SNS_PROTO_LQRP
+   smxNsConst.SNS_PROTO_LQRP_defined = true;
+#else
+   smxNsConst.SNS_PROTO_LQRP_defined = false;
+#endif
+
+#if SNS_PROTO_PPP
+   smxNsConst.SNS_PROTO_PPP_defined = true;
+#else
+   smxNsConst.SNS_PROTO_PPP_defined = false;
+#endif
+
+#if SNS_PROTO_SLIP
+   smxNsConst.SNS_PROTO_SLIP_defined = true;
+#else
+   smxNsConst.SNS_PROTO_SLIP_defined = false;
+#endif
+
+#if SNS_CONTEXT_SWITCH_FLAG
+   smxNsConst.SNS_CONTEXT_SWITCH_FLAG_defined = true;
+#else
+   smxNsConst.SNS_CONTEXT_SWITCH_FLAG_defined = false;
+#endif
+
+#if SNS_PROTO_IPV6
+   smxNsConst.SNS_PROTO_IPV6_defined = true;
+#else
+   smxNsConst.SNS_PROTO_IPV6_defined = false;
+#endif
+
+}
+#endif /* SMXNS */
+
+
+#if defined(SMXUSBD) /* smxUSB Device */
+/*
+* smxUSB Device smxAware interface.
+*
+* This section provides smxAware with constants or symbol addresses that
+* are not otherwise accessible by smxAware.
+*
+* If smxUSBD does not expand or appear in the smxAware top level objects list
+* here are some things to check:
+*
+* 1) SUD_VERSION must be 2.30 or greater
+* 2) This file (smxAware.c) must be linked in.
+* 3) smxaware_smxusbd_init() must be called in smxusbd_init() in smxmods.c
+*
+*****************************************************************************/
+
+#include "udcfg.h"
+#include "udport.h"
+
+/* This structure is a copy of the same structure in smxAware3A\smxAddOns\smxUSBD\smxUSBD.cpp.
+   It is initialized when the target is started.
+*/
+typedef struct
+{
+   u32 data_version;
+   u32 USB_VERSION_value;
+   u32 SMXUSBD_defined;
+   u32 SUD_HIGH_SPEED_defined;
+   u32 SUD_COMPOSITE_defined;
+
+   u32 unused0;
+   u32 unused1;
+   u32 unused2;
+   u32 unused3;
+
+} SA_SMXUSBD_CONST_TYPE;
+SA_SMXUSBD_CONST_TYPE smxUsbDeviceConst = {0};  /* Set data_version to 0. If smxAware reads this data structure and data_version is 0 then it has not yet been initialized. */
+
+void smxaware_smxusbd_init(void)
+{
+   smxUsbDeviceConst.data_version      = 100;
+   smxUsbDeviceConst.USB_VERSION_value = SUD_VERSION;       /* The first version for smxAware is 0x0230 = XX.XX */
+#ifdef SMXUSBD
+   smxUsbDeviceConst.SMXUSBD_defined = true;
+#else
+   smxUsbDeviceConst.SMXUSBD_defined = false;
+#endif
+
+#if SUD_HIGH_SPEED
+   smxUsbDeviceConst.SUD_HIGH_SPEED_defined = true;
+#else
+   smxUsbDeviceConst.SUD_HIGH_SPEED_defined = false;
+#endif
+
+#if SUD_COMPOSITE
+   smxUsbDeviceConst.SUD_COMPOSITE_defined = true;
+#else
+   smxUsbDeviceConst.SUD_COMPOSITE_defined = false;
+#endif
+
+#ifndef SUD_COMPOSITE
+#error  udcfg.h not included
+#endif
+}
+
+#endif /* SMXUSBD */
+
+
+#if defined(SMXUSBH) /* smxUSB Host */
+/*
+* smxUSB Host smxAware interface.
+*
+* This section provides smxAware with constants or symbol addresses that
+* are not otherwise accessible by smxAware.
+*
+* If smxUSBH does not expand or appear in the smxAware top level objects list
+* here are some things to check:
+*
+* 1) SU_VERSION must be 2.30 or greater
+* 2) This file (smxAware.c) must be linked in.
+* 3) smxaware_smxusbh_init() must be called in smxusb_init() in smxmods.c
+*
+*****************************************************************************/
+
+#include "smxusbh.h"
+#include "uport.h"
+
+/* This structure is a copy of the same structure in smxAware3A\smxAddOns\smxUSBH\smxUSBH.cpp.
+   It is initialized when the target is started.
+*/
+typedef struct
+{
+   u32 data_version;
+   u32 USB_VERSION_value;
+   u32 size_of_SU_DRV_DEVICEINFO_T;
+   u32 SMXUSBH_defined;
+   u32 SU_OTG_defined;
+   u32 DeviceInfo_pConfigDesc_offset;
+   u32 DeviceInfo_pChildDevice_offset;
+   u32 SU_DRV_MAX_ENDPOINT_NUM_value;       /* added in data version 102 */
+   u32 DeviceInfo_Desc_offset;              /* added in data version 103 for USBH V3 */
+   u32 HostCtrlInfo_pRootHubDevice_offset;  /* added in data version 103 for USBH V3 */
+   
+   u32 unused2;
+   u32 unused3;
+
+} SA_SMXUSBH_CONST_TYPE;
+SA_SMXUSBH_CONST_TYPE smxUsbHostConst = {0};  /* Set data_version to 0. If smxAware reads this data structure and data_version is 0 then it has not yet been initialized. */
+
+void smxaware_smxusbh_init(void)
+{
+#if (SU_VERSION < 0x0300)
+   smxUsbHostConst.data_version                       = 102;                           /* version of SA_SMXUSBH_CONST_TYPE */
+#else
+   smxUsbHostConst.data_version                       = 103;                           /* version of SA_SMXUSBH_CONST_TYPE */
+#endif
+   smxUsbHostConst.USB_VERSION_value                  = SU_VERSION;                    /* The first version for smxAware is 0x0230 = XX.XX */
+   smxUsbHostConst.size_of_SU_DRV_DEVICEINFO_T        = su_GetDrvInfoSize();
+   smxUsbHostConst.DeviceInfo_pConfigDesc_offset      = su_GetDrvInfoConfDescOffset(); /* save the offset to USBDeviceInfo because the structure size is different */
+   smxUsbHostConst.DeviceInfo_pChildDevice_offset     = su_GetDrvInfoChildDevOffset(); /* save the offset to USBDeviceInfo because the structure size is different */
+   smxUsbHostConst.SU_DRV_MAX_ENDPOINT_NUM_value      = 16;                            /* SU_DRV_MAX_ENDPOINT_NUM */
+#if (SU_VERSION >= 0x0300)
+   smxUsbHostConst.DeviceInfo_Desc_offset             = su_GetDrvInfoDescOffset();     /* save the offset to USBDeviceInfo.desc because the structure has changed in USBH V3 */
+   smxUsbHostConst.HostCtrlInfo_pRootHubDevice_offset = su_GetRootHubDeviceOffset();   /* save the offset to SU_DRV_HOSTBUSINFO_T.pRootHubDevice because the structure has changed in USBH V3 */
+#else
+   smxUsbHostConst.DeviceInfo_Desc_offset             = 0;
+   smxUsbHostConst.HostCtrlInfo_pRootHubDevice_offset = 0;
+#endif
+
+#ifdef SMXUSBH
+   smxUsbHostConst.SMXUSBH_defined = true;
+#else
+   smxUsbHostConst.SMXUSBH_defined = false;
+#endif
+#if SU_OTG
+   smxUsbHostConst.SU_OTG_defined = true;
+#else
+   smxUsbHostConst.SU_OTG_defined = false;
+#endif
+}
+
+#endif /* SMXUSBH */
 
 #if defined(SMXAWARE_LIVE)  /* condition out whole section if SMXAWARE_LIVE is not enabled */
 #error Copy this section from v5.3.1 and update to match SMX and change to use other TCP/IP stack.

@@ -1,5 +1,5 @@
 /*
-* mpa8.c                                                    Version 6.1.0
+* mpa8.c                                                    Version 6.2.0
 *
 * MPA ARMM8 templates for NXP LPC55Sxx processors.
 *
@@ -89,7 +89,7 @@ MPA mpa_tmplt_cp =
    RGN(1, RA("cp_data")    | DATARW,  RLA("cp_data")    | AI(0) | EN, "cp_data"),
    RGN(2, RA("ucom_code")  | CODE,    RLA("ucom_code")  | AI(0) | EN, "ucom_code"),
    RGN(3, 0x40086000       | IOR,     0x40086FE0        | AI(1) | EN, "USART0"),
-// RGN(4 | V, 0, "pmsg"),  /* console portal pmsg slot */
+// RGN(4 | V, 0, "cp pmsg"),  /* console portal pmsg slot */
 };
 
 /* MPA template for led task */

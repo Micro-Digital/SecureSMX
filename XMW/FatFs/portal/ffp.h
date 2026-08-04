@@ -1,7 +1,7 @@
 /*
-* fp.h                                                      Version 6.0.0
+* ffp.h                                                      Version 6.2.0
 *
-* File portal header file for FatFs.
+* FatFs portal header file
 *
 * Copyright (c) 2025-2026 Micro Digital Inc.
 * All rights reserved. www.smxrtos.com
@@ -37,6 +37,7 @@ enum fatfs_api {F_MOUNT, F_OPEN, F_CLOSE, F_READ, F_WRITE, F_UNLINK};
 
 #define FP_SSLOT     6           /* file portal server pmsg region slot */
 #define FP_CTMO      5000        /* file portal csem timeout in ticks <1> */
+#define FP_DEMO_DLY  1000        /* msec between runs */
 #define FP_STMO      120         /* file portal ssem timeout in ticks <2> */
 #define PM_THDRSZ    (sizeof(TPMH) + sizeof(FPSH)) /* pmsg total header size */
 #define PM_BUFSZ     1024                          /* pmsg buffer size */
@@ -56,8 +57,8 @@ typedef struct FPSH {   /* FILE PORTAL SERVICE HEADER */
 extern "C" {
 #endif
 
-bool fp_init(u8 ssn);
-bool fp_exit(void);
+bool     fp_init(u8 ssn);
+bool     fp_exit(void);
 
 /* portal shell function prototypes */
 FRESULT fp_mount(FATFS* fs, const TCHAR* path, BYTE opt, TPCS* pch);

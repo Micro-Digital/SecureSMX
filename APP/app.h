@@ -1,5 +1,5 @@
 /*
-* app.h                                                     Version 6.0.0
+* app.h                                                     Version 6.2.0
 *
 * Application header file.
 *
@@ -51,6 +51,31 @@ void fpudemo_exit(void);
 #if MW_FATFS_DEMO
 void fpdemo_init(void);
 void fpdemo_exit(void);
+#endif
+
+#if SMXFS_DEMO
+void fsdemo_init(void);
+void fsdemo_exit(void);
+#endif
+
+#if SMXNS_DEMO
+void nsdemo_init(void);
+void nsdemo_exit(void);
+extern int nsdemo_count;
+#endif
+
+#if SMXUSBD_DEMO
+void usbddemo_init(void);
+void usbddemo_exit(void);
+#endif
+
+#if SMXUSBH_DEMO
+void usbhdemo_init(void);
+void usbhdemo_exit(void);
+#endif
+
+#if CSL_USSL
+extern PICB_PTR ussl_pipe;
 #endif
 
 #ifdef __cplusplus

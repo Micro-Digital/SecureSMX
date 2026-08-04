@@ -1,5 +1,5 @@
 /*
-* sys.c                                                     Version 6.0.0
+* sys.c                                                     Version 6.2.0
 *
 * System code running in pmode system partition, sys.
 *
@@ -268,12 +268,21 @@ FPCS    cpcli_idle;       /* client struct for idle */
 /* console portal server permitted client list <4a> */
 FPCS*   cpcli_lst[] = {&cpcli_idle, &cpcli_opcon,
 #if SB_FPU_DEMO 
-                                    &cpcli_fpu, 
+                       &cpcli_fpu, 
 #endif
 #if MW_FATFS_DEMO
-                                    &cpcli_fpd
+                       &cpcli_fpd
 #endif
-                                              };
+#if SMXFS_DEMO
+                       &cpcli_fsd,
+#endif
+#if SMXUSBD_DEMO
+                       &cpcli_udd,
+#endif
+#if SMXUSBH_DEMO
+                       &cpcli_uhd,
+#endif
+                       };
 
 u32     cpcli_lstsz = sizeof(cpcli_lst)/4;  /* size of cpcli_lst */
 
@@ -358,8 +367,7 @@ void opcon_main(u32)
            #endif
           #endif
             smx_lockctr = 0;
-            /* restart idle with aexit() main function and max priority */
-            smx_TaskStartNew(smx_Idle, SMXE_OK, PRI_SYS, (FUN_PTR)aexit);
+            break;
          }
          else
          {
@@ -396,6 +404,9 @@ void opcon_main(u32)
          }
       }
    }
+   /* restart idle with aexit() main function and max priority after opcon stops */
+   smx_TaskLock();
+   smx_TaskStartNew(smx_Idle, SMXE_OK, PRI_SYS, (FUN_PTR)aexit);
 }
 #endif /* SB_CFG_CON */
 
