@@ -55,6 +55,12 @@
    are non-maskable and reserved for special uses such as motor control
    that must not be delayed and that do not interact with the multitasking
    system.
+
+   IMPORTANT: Set SVC priority higher (lower value) than any ISRs that
+   invoke uLSRs (umode safe LSRs). Do in sb_IntCtrlInit() in bspm.c.
+   Change the expression (0xFFUL - SB_IRQ_PRI_INCR) to the priority value.
+   Otherwise a Usage Fault will occur if SVC is interrupted by such a uLSR
+   that makes an SSR call when it does SVC n to run the function.
 */
 
 SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
@@ -88,8 +94,8 @@ SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
    {  0xFF  },  /* 24   ACMP */
    {  0xFF  },  /* 25   Reserved */
    {  0xFF  },  /* 26   Reserved */
-   {  0xFF  },  /* 27   USB0_NEEDCLK */
-   {  0xFF  },  /* 28   USB0 */
+   {  0x80  },  /* 27   USB0_NEEDCLK */
+   {  0x80  },  /* 28   USB0 */
    {  0xFF  },  /* 29   RTC */
    {  0xFF  },  /* 30   Reserved */
    {  0xFF  },  /* 31   MAILBOX */
@@ -103,12 +109,12 @@ SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
    {  0xFF  },  /* 39   Reserved */
    {  0xFF  },  /* 40   Reserved */
    {  0xFF  },  /* 41   Reserved */
-   {  0xFF  },  /* 42   SDIO */
+   {  0xA0  },  /* 42   SDIO */
    {  0xFF  },  /* 43   Reserved */
    {  0xFF  },  /* 44   Reserved */
    {  0xFF  },  /* 45   Reserved */
    {  0xFF  },  /* 46   USB1_PHY */
-   {  0xFF  },  /* 47   USB1 */
+   {  0x80  },  /* 47   USB1 */
    {  0xFF  },  /* 48   USB1_NEEDCLK */
    {  0xFF  },  /* 49   HYPERVISOR */
    {  0xFF  },  /* 50   SGPIO_INT0_IRQ0 */

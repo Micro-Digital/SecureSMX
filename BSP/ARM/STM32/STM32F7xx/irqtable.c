@@ -56,6 +56,12 @@
    are non-maskable and reserved for special uses such as motor control
    that must not be delayed and that do not interact with the multitasking
    system.
+
+   IMPORTANT: Set SVC priority higher (lower value) than any ISRs that
+   invoke uLSRs (umode safe LSRs). Do in sb_IntCtrlInit() in bspm.c.
+   Change the expression (0xFFUL - SB_IRQ_PRI_INCR) to the priority value.
+   Otherwise a Usage Fault will occur if SVC is interrupted by such a uLSR
+   that makes an SSR call when it does SVC n to run the function.
 */
 SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
 {
@@ -110,7 +116,7 @@ SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
    {  0xFF  },  /* 46   TIM8 Capture Compare */
    {  0xFF  },  /* 47   DMA1 Stream7 */
    {  0xFF  },  /* 48   FSMC global */
-   {  0xFF  },  /* 49   SDIO global */
+   {  0x40  },  /* 49   SDIO global */
    {  0xFF  },  /* 50   TIM5 global */
    {  0xFF  },  /* 51   SPI3 global */
    {  0xFF  },  /* 52   UART4 global */
@@ -120,15 +126,15 @@ SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
    {  0xFF  },  /* 56   DMA2 Stream 0 global */
    {  0xFF  },  /* 57   DMA2 Stream 1 global */
    {  0xFF  },  /* 58   DMA2 Stream 2 global */
-   {  0xFF  },  /* 59   DMA2 Stream 3 global */
+   {  0x20  },  /* 59   DMA2 Stream 3 global */
    {  0xFF  },  /* 60   DMA2 Stream 4 global */
-   {  0xFF  },  /* 61   Ethernet global */
+   {  0x40  },  /* 61   Ethernet global */
    {  0xFF  },  /* 62   Ethernet Wakeup through EXTI Line */
    {  0xFF  },  /* 63   CAN2 TX */
    {  0xFF  },  /* 64   CAN2 RX0 */
    {  0xFF  },  /* 65   CAN2 RX1 */
    {  0xFF  },  /* 66   CAN2 SCE */
-   {  0xFF  },  /* 67   USB OTG FS global */
+   {  0x80  },  /* 67   USB OTG FS global */
    {  0xFF  },  /* 68   DMA2 Stream 5 global */
    {  0xFF  },  /* 69   DMA2 Stream 6 global */
    {  0xFF  },  /* 70   DMA2 Stream 7 global */
@@ -138,7 +144,7 @@ SB_IRQ_REC sb_irq_table[SB_IRQ_NUM] =
    {  0xFF  },  /* 74   USB OTG HS End Point 1 Out global */
    {  0xFF  },  /* 75   USB OTG HS End Point 1 In global */
    {  0xFF  },  /* 76   USB OTG HS Wakeup through EXTI */
-   {  0xFF  },  /* 77   USB OTG HS global */
+   {  0x80  },  /* 77   USB OTG HS global */
    {  0xFF  },  /* 78   DCMI global */
    {  0xFF  },  /* 79   CRYP crypto global */
    {  0xFF  },  /* 80   Hash and Rng global */

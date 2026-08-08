@@ -1,5 +1,5 @@
 /*
-* bspm.c                                                    Version 6.0.0
+* bspm.c                                                    Version 6.2.0
 *
 * Board Support Package API Module for ARM-M processors.
 * All are similar so just use conditionals here for differences.
@@ -177,6 +177,9 @@ bool sb_IntCtrlInit(void)
       1. SysTick should be the highest maskable priority so it has higher
          priority than user ISRs (interrupts 16-239).
       2. SVC is set to the second-lowest priority, just above PendSV.
+         If any ISRs invoke uLSRS (umode safe LSRs), set SVC priority to
+         the highest priority of such ISRs, to avoid a Usage Fault if one
+         interrupts SVC and calls an SSR, when it calls SVC n.
       3. PendSV must have lowest priority. We set it to 0xFF realizing low
          bits are ignored. For example if using a 3-bit priority, it becomes 0xE0.
          The PendSV priority is tested against the SB_IRQ_PRI_BITS mask as a check
